@@ -8,6 +8,8 @@ import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import Header from './components/header/Header';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const FullLayout = ({ children }) => (
   <div className="app-container">
@@ -26,16 +28,22 @@ const HeaderOnlyLayout = ({ children }) => (
 
 const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<FullLayout><Home /></FullLayout>} />
-        <Route path="/about" element={<FullLayout><About /></FullLayout>} />
-        <Route path="/login" element={<HeaderOnlyLayout><Login /></HeaderOnlyLayout>} />
-        <Route path="/signup" element={<HeaderOnlyLayout><SignUp /></HeaderOnlyLayout>} />
-        <Route path="/dashboard/*" element={<Dashboard />} />
-        <Route path="/forgot-password" element={<HeaderOnlyLayout><ForgotPassword /></HeaderOnlyLayout>} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<FullLayout><Home /></FullLayout>} />
+          <Route path="/about" element={<FullLayout><About /></FullLayout>} />
+          <Route path="/login" element={<HeaderOnlyLayout><Login /></HeaderOnlyLayout>} />
+          <Route path="/signup" element={<HeaderOnlyLayout><SignUp /></HeaderOnlyLayout>} />
+          <Route path="/dashboard/*" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/forgot-password" element={<HeaderOnlyLayout><ForgotPassword /></HeaderOnlyLayout>} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 };
 
