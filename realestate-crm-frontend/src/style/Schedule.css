@@ -13,14 +13,13 @@
     --modal-bg: rgba(0, 0, 0, 0.5);
     --transition-speed: 0.3s;
     --border-radius: 8px;
+    --background-color: var(--primary-color);
 }
 
-.rental-management {
-    /* padding: 30px; */
+.visit-scheduling {
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     background-color: #fdfeff;
     min-height: 100vh;
-    border: 0px;
 }
 
 .page-header {
@@ -96,12 +95,11 @@
     background-color: rgba(0, 127, 255, 0.05);
 }
 
-/* Dashboard Metrics */
 .dashboard-overview {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .metric-card {
@@ -130,20 +128,20 @@
     color: white;
 }
 
-.properties-icon {
+.scheduled-icon {
     background-color: var(--primary-color);
 }
 
-.upcoming-icon {
-    background-color: var(--warning-color);
+.completed-icon {
+    background-color: var(--success-color);
 }
 
-.expiring-icon {
-    background-color: var(--secondary-color);
-}
-
-.overdue-icon {
+.cancelled-icon {
     background-color: var(--danger-color);
+}
+
+.conversion-icon {
+    background-color: var(--secondary-color);
 }
 
 .metric-content h3 {
@@ -161,46 +159,43 @@
     margin: 0;
 }
 
-/* Content Tabs */
-.content-tabs {
+/* View Toggle */
+.view-toggle {
     display: flex;
-    border-bottom: 1px solid var(--border-color);
+    gap: 10px;
     margin-bottom: 20px;
-    background-color: white;
-    border-radius: var(--border-radius) var(--border-radius) 0 0;
-    overflow: hidden;
 }
 
-.tab-button {
+.toggle-btn {
     display: flex;
     align-items: center;
-    padding: 15px 20px;
-    font-size: 15px;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 14px;
     font-weight: 500;
     color: var(--gray-color);
-    background-color: transparent;
-    border: none;
     cursor: pointer;
     transition: all var(--transition-speed) ease;
-    gap: 8px;
-    border-bottom: 3px solid transparent;
 }
 
-.tab-button:hover {
-    color: var(--primary-color);
-    background-color: rgba(0, 127, 255, 0.05);
+.toggle-btn:hover {
+    background-color: #f5f5f5;
 }
 
-.tab-button.active {
-    color: var(--primary-color);
-    border-bottom: 3px solid var(--primary-color);
+.toggle-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
 }
 
 /* Content Area */
 .content-area {
     background-color: white;
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
-    padding: 20px;
+    border-radius: var(--border-radius);
+    overflow: hidden;
     box-shadow: 0 2px 10px var(--shadow-color);
 }
 
@@ -209,7 +204,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .search-box {
@@ -263,6 +259,7 @@
 
 /* Table */
 .table-container {
+    padding: 0 20px 20px;
     overflow-x: auto;
 }
 
@@ -306,34 +303,24 @@
     border-radius: 16px;
 }
 
-.status-paid {
+.status-scheduled {
+    background-color: rgba(0, 127, 255, 0.1);
+    color: var(--primary-color);
+}
+
+.status-completed {
     background-color: rgba(56, 176, 0, 0.1);
     color: var(--success-color);
 }
 
-.status-due {
-    background-color: rgba(255, 190, 11, 0.1);
-    color: var(--warning-color);
-}
-
-.status-overdue {
+.status-cancelled {
     background-color: rgba(251, 86, 7, 0.1);
     color: var(--danger-color);
 }
 
-.status-active {
-    background-color: rgba(56, 176, 0, 0.1);
-    color: var(--success-color);
-}
-
-.status-expiring {
-    background-color: rgba(255, 190, 11, 0.1);
-    color: var(--warning-color);
-}
-
-.status-expired {
-    background-color: rgba(251, 86, 7, 0.1);
-    color: var(--danger-color);
+.action-buttons-container {
+    display: flex;
+    gap: 5px;
 }
 
 .action-btn {
@@ -343,68 +330,38 @@
     border: none;
     cursor: pointer;
     transition: all var(--transition-speed) ease;
-    margin-right: 5px;
 }
 
-.mark-paid-btn {
+.complete-btn {
     background-color: var(--success-color);
     color: white;
 }
 
-.mark-paid-btn:hover {
+.complete-btn:hover {
     background-color: #2d9000;
 }
 
-.view-receipt-btn,
-.view-btn {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.view-receipt-btn:hover,
-.view-btn:hover {
-    background-color: #0066cc;
-}
-
-.renew-btn {
-    background-color: var(--secondary-color);
-    color: white;
-}
-
-.renew-btn:hover {
-    background-color: #6c2dc7;
-}
-
-.edit-btn {
-    background-color: var(--warning-color);
-    color: white;
-}
-
-.edit-btn:hover {
-    background-color: #e6a800;
-}
-
-.delete-btn {
+.cancel-btn {
     background-color: var(--danger-color);
     color: white;
 }
 
-.delete-btn:hover {
-    background-color: #d94800;
+.cancel-btn:hover {
+    background-color: #e14900;
 }
 
-.download-btn {
-    background-color: var(--gray-color);
-    color: white;
+.reschedule-btn {
+    background-color: var(--warning-color);
+    color: var(--dark-color);
 }
 
-.download-btn:hover {
-    background-color: #5a6268;
+.reschedule-btn:hover {
+    background-color: #e6a800;
 }
 
 /* Detail Panel */
 .detail-panel {
-    margin-top: 20px;
+    margin: 0 20px 20px;
     background-color: #f8f9fa;
     border-radius: var(--border-radius);
     overflow: hidden;
@@ -453,6 +410,13 @@
     padding: 20px;
 }
 
+.detail-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
 .detail-section {
     margin-bottom: 20px;
 }
@@ -471,188 +435,273 @@
     color: var(--gray-color);
 }
 
+.status-text {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-left: 5px;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.notes-area {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    min-height: 100px;
+}
+
+.notes-area p {
+    margin: 0;
+}
+
 .detail-actions {
     display: flex;
     gap: 10px;
     margin-top: 20px;
 }
 
-.mini-table {
-    background-color: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.mini-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    padding: 10px 15px;
-    font-size: 14px;
-}
-
-.mini-row.header {
-    background-color: #f5f7fa;
-    font-weight: 600;
-    color: var(--gray-color);
-}
-
-.mini-row:not(.header) {
-    border-top: 1px solid var(--border-color);
-}
-
-/* Documents Tab */
-.documents-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
-}
-
-.document-card {
-    background-color: white;
-    border-radius: var(--border-radius);
+.calendar-view {
     padding: 20px;
-    box-shadow: 0 2px 8px var(--shadow-color);
-    transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
-    display: flex;
-    flex-direction: column;
 }
 
-.document-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.document-icon {
-    background-color: #f5f7fa;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    color: var(--primary-color);
-}
-
-.document-info h4 {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0;
-    margin-bottom: 8px;
-    color: var(--dark-color);
-}
-
-.document-info p {
-    font-size: 14px;
-    margin: 0;
-    margin-bottom: 5px;
-    color: var(--gray-color);
-}
-
-.document-type {
-    font-weight: 500;
-    color: var(--primary-color) !important;
-}
-
-.document-date {
-    font-size: 12px !important;
-    color: var(--gray-color);
-}
-
-.document-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 15px;
-    margin-top: auto;
-    padding-top: 15px;
-}
-
-/* Reminders Tab */
-.reminders-header {
+.calendar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.reminders-header h2 {
+.calendar-header h3 {
     font-size: 20px;
     font-weight: 600;
     margin: 0;
     color: var(--dark-color);
 }
 
-.reminders-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
+.calendar-nav {
+    display: flex;
+    gap: 10px;
 }
 
-.reminder-card {
+.calendar-days-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--gray-color);
+    margin-bottom: 10px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-day {
+    aspect-ratio: 1/1;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    position: relative;
+    min-height: 100px;
+}
+
+.calendar-day.empty {
+    background-color: #f5f7fa;
+    border: none;
+}
+
+.calendar-day.today {
+    background-color: rgba(0, 127, 255, 0.05);
+    border-color: var(--primary-color);
+}
+
+.day-number {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 5px;
+}
+
+.calendar-day.today .day-number {
+    color: var(--primary-color);
+}
+
+.day-visits {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.visit-pill {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+}
+
+.visit-pill:hover {
+    filter: brightness(0.95);
+}
+
+.visit-pill.status-scheduled {
+    background-color: rgba(0, 127, 255, 0.1);
+    color: var(--primary-color);
+    border-left: 3px solid var(--primary-color);
+}
+
+.visit-pill.status-completed {
+    background-color: rgba(56, 176, 0, 0.1);
+    color: var(--success-color);
+    border-left: 3px solid var(--success-color);
+}
+
+.visit-pill.status-cancelled {
+    background-color: rgba(251, 86, 7, 0.1);
+    color: var(--danger-color);
+    border-left: 3px solid var(--danger-color);
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--modal-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
     background-color: white;
     border-radius: var(--border-radius);
-    padding: 20px;
-    box-shadow: 0 2px 8px var(--shadow-color);
-    transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+    width: 800px;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    animation: scaleIn 0.3s ease;
 }
 
-.reminder-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+@keyframes scaleIn {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
-.reminder-header {
+.modal-header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
 }
 
-.reminder-header h3 {
-    font-size: 16px;
-    font-weight: 600;
+.modal-header h3 {
     margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Form */
+form {
+    padding: 20px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 5px;
     color: var(--dark-color);
 }
 
-.reminder-badge {
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 10px;
-    background-color: #f5f7fa;
-    color: var(--gray-color);
-    font-weight: 500;
-}
-
-.reminder-card p {
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
     font-size: 14px;
-    margin: 0;
-    margin-bottom: 10px;
-    color: var(--gray-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: white;
+    transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
 }
 
-.reminder-date {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--primary-color) !important;
-    font-weight: 500;
-    margin-bottom: 15px !important;
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 127, 255, 0.1);
+    outline: none;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
 }
 
 .reminder-settings {
     background-color: #f5f7fa;
-    padding: 12px;
+    padding: 15px;
     border-radius: 8px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.reminder-settings h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--dark-color);
 }
 
 .reminder-toggle {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .reminder-toggle:last-child {
@@ -660,13 +709,14 @@
 }
 
 .reminder-toggle span {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--dark-color);
 }
 
-.reminder-actions {
+.form-actions {
     display: flex;
-    gap: 8px;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 /* Switch */
@@ -720,10 +770,14 @@ input:checked+.slider:before {
     .dashboard-overview {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    .detail-columns {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 768px) {
-    .rental-management {
+    .visit-scheduling {
         padding: 20px;
     }
 
@@ -755,6 +809,10 @@ input:checked+.slider:before {
         width: 100%;
         justify-content: space-between;
     }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 576px) {
@@ -762,17 +820,13 @@ input:checked+.slider:before {
         grid-template-columns: 1fr;
     }
 
-    .content-tabs {
-        overflow-x: auto;
+    .calendar-day {
+        min-height: 70px;
+        padding: 5px;
     }
 
-    .tab-button {
-        padding: 12px 15px;
-        font-size: 14px;
-    }
-
-    .documents-grid,
-    .reminders-grid {
-        grid-template-columns: 1fr;
+    .visit-pill {
+        font-size: 9px;
+        padding: 2px 4px;
     }
 }
