@@ -1,0 +1,140 @@
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    box-shadow: 0 2px 10px var(--shadow-color);
+    z-index: 1000;
+    transition: transform var(--transition-speed) ease, opacity var(--transition-speed) ease;
+}
+
+.navbar-hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+    max-width: 1280px;
+    margin: 0 auto;
+    height: 70px;
+}
+
+.navbar-logo {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+    transition: all var(--transition-speed) ease;
+}
+
+.navbar-logo:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
+}
+
+.nav-items {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.nav-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-speed) ease;
+    color: var(--dark-color);
+    font-size: 0.9rem;
+    position: relative;
+}
+
+.nav-button::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    transition: width var(--transition-speed) ease;
+}
+
+.nav-button:hover {
+    color: var(--primary-color);
+}
+
+.nav-button:hover::after {
+    width: 100%;
+}
+
+.nav-button.active {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.nav-button.active::after {
+    width: 100%;
+}
+
+.nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-text {
+    white-space: nowrap;
+}
+
+@media (max-width: 920px) {
+    .nav-text {
+        display: none;
+    }
+
+    .nav-button {
+        padding: 0.5rem;
+    }
+
+    .nav-items {
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar-container {
+        padding: 0 1rem;
+    }
+
+    .nav-items {
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-container {
+        height: 60px;
+    }
+
+    .navbar-logo {
+        font-size: 1.2rem;
+    }
+
+    .nav-items {
+        gap: 0.25rem;
+    }
+
+    .nav-button {
+        padding: 0.4rem;
+    }
+}
