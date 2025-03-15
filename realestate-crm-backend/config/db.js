@@ -2,7 +2,7 @@ const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 const sequelize = new Sequelize(
-    process.env.DB_NAME || 'hcd',
+    process.env.DB_NAME || 'aj_awt_project',
     process.env.DB_USER || 'root',
     process.env.DB_PASSWORD || '',
     {
@@ -12,11 +12,24 @@ const sequelize = new Sequelize(
     }
 );
 
-sequelize.authenticate()
-    .then(() => console.log('MySQL Connected via Sequelize'))
-    .catch(err => console.error('MySQL Connection Failed:', err));
+const connectDB = async () => {
+    try {
+        await sequelize.authenticate();
+        console.log("Database connected successfully.");
+    } catch (error) {
+        console.error("Database connection failed:", error);
+    }
+};
 
-module.exports = sequelize;
+module.exports = { sequelize, connectDB };
+
+
+
+// sequelize.authenticate()
+//     .then(() => console.log('MySQL Connected via Sequelize'))
+//     .catch(err => console.error('MySQL Connection Failed:', err));
+
+// module.exports = sequelize;
 
 // "bcryptjs": "^2.4.3",
 // "cors": "^2.8.5",
