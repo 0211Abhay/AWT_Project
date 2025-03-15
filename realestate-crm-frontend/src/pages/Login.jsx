@@ -1,33 +1,46 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import withSessionCheck from '../components/SessionCheck';
 import "../style/Login.css";
-
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+    const [error, setError] = useState('');
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log('Login attempt with:', { email, password, rememberMe });
+        setError('');
+        
+        const result = await login(email, password, rememberMe);
+        if (result.success) {
+            navigate('/dashboard');
+        } else {
+            setError(result.error);
+        }
     };
 
     return (
         <div className="auth-container">
             <div className="auth-card">
                 <div className="auth-header">
-                    <h1>Welcome back</h1>
-                    <p>Please enter your details to sign in</p>
+                    <h1>Welcome back, Broker</h1>
+                    <p>Please enter your details to access your broker dashboard</p>
                 </div>
+
+                {error && <p className="error-message">{error}</p>}
 
                 <form onSubmit={handleSubmit} className="auth-form">
                     <div className="input-group">
                         <Mail size={20} className="input-icon" />
                         <input
                             type="email"
-                            placeholder="Email address"
+                            placeholder="Broker Email address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -38,7 +51,7 @@ const Login = () => {
                         <Lock size={20} className="input-icon" />
                         <input
                             type="password"
-                            placeholder="Password"
+                            placeholder="Broker Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -60,15 +73,15 @@ const Login = () => {
                     </div>
 
                     <button type="submit" className="submit-button">
-                        Sign in
+                        Sign in to Broker Dashboard
                     </button>
                 </form>
 
                 <div className="auth-footer">
                     <p>
-                        Don't have an account?{' '}
+                        Don't have a broker account?{' '}
                         <Link to="/signup" className="accent-link">
-                            Sign up
+                            Sign up for a broker account
                         </Link>
                     </p>
                 </div>
@@ -77,5 +90,5 @@ const Login = () => {
     );
 };
 
-export default Login;
-
+// Wrap Login with session check and don't require authentication
+export default withSessionCheck(Login, false);

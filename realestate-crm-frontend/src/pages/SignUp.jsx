@@ -28,9 +28,11 @@ const SignUp = () => {
                 email,
                 phone,
                 password
+            }, {
+                withCredentials: true
             });
 
-            alert("Registration successful! Please log in.");
+            alert("Broker registration successful! Please log in.");
             navigate("/login");
         } catch (err) {
             setError(err.response?.data?.message || "Something went wrong!");
@@ -41,8 +43,8 @@ const SignUp = () => {
         <div className="auth-container">
             <div className="auth-card">
                 <div className="auth-header">
-                    <h1>Create account</h1>
-                    <p>Please enter your details to sign up</p>
+                    <h1>Create Broker Account</h1>
+                    <p>Please enter your details to register as a broker</p>
                 </div>
 
                 {error && <p className="error-message">{error}</p>}
@@ -52,7 +54,7 @@ const SignUp = () => {
                         <User size={20} className="input-icon" />
                         <input
                             type="text"
-                            placeholder="Full name"
+                            placeholder="Broker Full Name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
@@ -63,7 +65,7 @@ const SignUp = () => {
                         <Mail size={20} className="input-icon" />
                         <input
                             type="email"
-                            placeholder="Email address"
+                            placeholder="Broker Email Address"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -74,7 +76,7 @@ const SignUp = () => {
                         <Phone size={20} className="input-icon" />
                         <input
                             type="tel"
-                            placeholder="Phone number"
+                            placeholder="Broker Phone Number"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             required
@@ -85,7 +87,7 @@ const SignUp = () => {
                         <Lock size={20} className="input-icon" />
                         <input
                             type="password"
-                            placeholder="Password"
+                            placeholder="Create Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -104,13 +106,13 @@ const SignUp = () => {
                     </div>
 
                     <button type="submit" className="submit-button">
-                        Create account
+                        Register as Broker
                     </button>
                 </form>
 
                 <div className="auth-footer">
                     <p>
-                        Already have an account?{" "}
+                        Already have a broker account?{" "}
                         <Link to="/login" className="accent-link">
                             Sign in
                         </Link>
