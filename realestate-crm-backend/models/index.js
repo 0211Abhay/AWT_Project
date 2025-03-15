@@ -1,13 +1,22 @@
-const sequelize = require('../config/db');
-const Client = require('./client');
+const { Sequelize } = require('sequelize');
+const config = require('../config/db');
 
-const syncDB = async () => {
-    try {
-        await sequelize.sync({ alter: true }); // Use 'alter' for safe schema updates
-        console.log('All tables synchronized successfully.');
-    } catch (error) {
-        console.error('Error syncing database:', error);
+const sequelize = new Sequelize(
+    config.database,
+    config.username,
+    config.password,
+    {
+        host: config.host,
+        dialect: config.dialect
     }
+);
+
+const Broker = require('./Broker')(sequelize);
+
+const db = {
+    sequelize,
+    Sequelize,
+    Broker
 };
 
-module.exports = { Client, syncDB };
+module.exports = db;
