@@ -37,14 +37,14 @@ app.get('/', (req, res) => {
     res.json({ message: 'Real Estate CRM API is running' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Database connection and server start
 const startServer = async () => {
     try {
         await sequelize.authenticate();
         console.log('Database connected successfully');
-        
+
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });

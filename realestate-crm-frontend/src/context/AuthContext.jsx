@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Create axios instance with default config
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'http://localhost:5001/api',
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
@@ -47,10 +47,10 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password, rememberMe) => {
         try {
-            const response = await api.post('/auth/login', { 
-                email, 
-                password, 
-                rememberMe 
+            const response = await api.post('/auth/login', {
+                email,
+                password,
+                rememberMe
             });
             setBroker(response.data.broker);
             return { success: true };
