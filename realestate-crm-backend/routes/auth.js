@@ -62,10 +62,10 @@ router.post('/login', async (req, res) => {
 
         // Set session data
         req.session.brokerId = broker.broker_id;
-        
+
         // Send broker data without sensitive information
         const { password_hash, ...brokerData } = broker.toJSON();
-        res.json({ 
+        res.json({
             message: 'Login successful',
             broker: brokerData
         });
