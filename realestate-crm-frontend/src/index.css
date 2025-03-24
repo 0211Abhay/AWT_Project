@@ -17,6 +17,8 @@ body {
   line-height: 1.6;
   color: var(--text-dark);
   background-color: var(--accent-light);
+  margin-top: -3.5rem;
+
 }
 
 .app-container {
@@ -26,6 +28,7 @@ body {
 }
 
 .main-content {
+
   flex: 1;
   padding: 10px;
   background: linear-gradient(109.6deg, rgb(255, 255, 255) 11.2%, rgba(244, 248, 252, 1) 91.1%);
