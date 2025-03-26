@@ -1,8 +1,11 @@
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import withSessionCheck from '../components/SessionCheck';
+import GoogleButton from 'react-google-button'
+
 import "../style/Login.css";
 
 const Login = () => {
@@ -10,14 +13,23 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const { login, loginWithGoogle } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        
+
         const result = await login(email, password, rememberMe);
+        if (result.success) {
+            navigate('/dashboard');
+        } else {
+            setError(result.error);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        const result = await loginWithGoogle();
         if (result.success) {
             navigate('/dashboard');
         } else {
@@ -76,6 +88,12 @@ const Login = () => {
                         Sign in to Broker Dashboard
                     </button>
                 </form>
+                <div className='google-login-div'>
+
+                    <GoogleButton className='google-button' style={{ width: '350px', borderRadius: '0px' }}
+                        onClick={() => { console.log('Google button clicked') }}
+                    />
+                </div>
 
                 <div className="auth-footer">
                     <p>

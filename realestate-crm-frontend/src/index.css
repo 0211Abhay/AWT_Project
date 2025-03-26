@@ -45,12 +45,10 @@ button {
   outline: none;
 }
 
-/* Add smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Add selection color */
 ::selection {
   background-color: var(--primary-blue);
   color: white;

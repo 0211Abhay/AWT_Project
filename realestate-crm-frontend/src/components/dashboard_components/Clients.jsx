@@ -1,68 +1,9 @@
 import React, { useState, useEffect } from 'react';
-// import '../..styles/Clients.css';
 import "../../style/Clients.css"
-const Client = () => {
-    // Sample initial client data
-    const initialClients = [
-        {
-            id: 1,
-            name: 'John Doe',
-            email: 'john@example.com',
-            phone: '555-1234',
-            joinDate: '2022-01-15',
-            status: 'active',
-            deals: [
-                { id: 101, propertyAddress: '123 Main St', type: 'sale', amount: 350000, date: '2022-04-15', status: 'completed' },
-                { id: 102, propertyAddress: '456 Oak Ave', type: 'rental', amount: 2000, date: '2022-06-01', status: 'active' }
-            ]
-        },
-        {
-            id: 2,
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            phone: '555-5678',
-            joinDate: '2022-03-22',
-            status: 'active',
-            deals: [
-                { id: 103, propertyAddress: '789 Pine Rd', type: 'sale', amount: 425000, date: '2022-09-20', status: 'completed' }
-            ]
-        },
-        {
-            id: 3,
-            name: 'Robert Johnson',
-            email: 'robert@example.com',
-            phone: '555-9012',
-            joinDate: '2022-05-10',
-            status: 'inactive',
-            deals: []
-        },
-        {
-            id: 4,
-            name: 'Emily Davis',
-            email: 'emily@example.com',
-            phone: '555-3456',
-            joinDate: '2022-07-05',
-            status: 'active',
-            deals: [
-                { id: 104, propertyAddress: '101 Maple Dr', type: 'rental', amount: 1800, date: '2022-08-15', status: 'active' }
-            ]
-        },
-        {
-            id: 5,
-            name: 'Michael Wilson',
-            email: 'michael@example.com',
-            phone: '555-7890',
-            joinDate: '2022-09-18',
-            status: 'active',
-            deals: [
-                { id: 105, propertyAddress: '202 Elm St', type: 'sale', amount: 280000, date: '2022-11-05', status: 'completed' },
-                { id: 106, propertyAddress: '303 Cedar Ln', type: 'rental', amount: 2200, date: '2023-01-10', status: 'active' }
-            ]
-        },
-    ];
 
+const Client = () => {
     // State management
-    const [clients, setClients] = useState(initialClients);
+    const [clients, setClients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [isAddingClient, setIsAddingClient] = useState(false);
@@ -70,6 +11,9 @@ const Client = () => {
     const [showClientDetails, setShowClientDetails] = useState(false);
     const [selectedClient, setSelectedClient] = useState(null);
     const [dealFilter, setDealFilter] = useState('all');
+    const [loading, setLoading] = useState(false);
+
+    const [error, setError] = useState(null); // <-- Add error state
     const [currentClient, setCurrentClient] = useState({
         id: null,
         name: '',
@@ -80,84 +24,121 @@ const Client = () => {
         deals: []
     });
 
-    // Filter clients based on search term and status
-    const filteredClients = clients.filter(client => {
-        const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            client.phone.includes(searchTerm);
+    useEffect(() => {
+        fetchClients();
+    }, []);
 
-        const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+    const fetchClients = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch("http://localhost:5001/api/client/getAllClient");
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.details || "Failed to fetch clients");
+            }
 
-        return matchesSearch && matchesStatus;
-    });
+            const data = await response.json();
+            console.log('Received client data:', data); // Debug log
+            
+            setClients(data.map(client => ({
+                id: client.client_id,
+                name: client.name,
+                email: client.email,
+                phone: client.phone,
+                joinDate: client.created_at,
+                status: 'active', // Default status since it's not in the model
+                deals: [] // Default empty deals since it's not in the model
+            })));
+        } catch (error) {
+            console.error("Error fetching clients:", error);
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    // Filter deals for the selected client
-    const filteredDeals = selectedClient?.deals.filter(deal => {
-        return dealFilter === 'all' || deal.type === dealFilter;
-    }) || [];
 
-    // Handle input changes for form
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setCurrentClient({ ...currentClient, [name]: value });
     };
 
-    // View client details
     const viewClientDetails = (client) => {
         setSelectedClient(client);
         setShowClientDetails(true);
     };
 
-    // Add new client
-    const addClient = () => {
-        // Simple validation
+    const addClient = async () => {
         if (!currentClient.name || !currentClient.email || !currentClient.phone) {
             alert('Please fill all required fields');
             return;
         }
 
-        const newClient = {
-            ...currentClient,
-            id: clients.length > 0 ? Math.max(...clients.map(c => c.id)) + 1 : 1,
-            joinDate: new Date().toISOString().split('T')[0],
-            deals: []
+        const newClientData = {
+            name: currentClient.name,
+            email: currentClient.email,
+            phone: currentClient.phone,
+            status: currentClient.status,
+            brokerId: 1,
+            address: currentClient.address || ''
         };
 
-        setClients([...clients, newClient]);
-        resetForm();
-        setIsAddingClient(false);
+        try {
+            const response = await fetch('http://localhost:5001/api/client/createClient', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newClientData)
+            });
+
+            if (!response.ok) throw new Error('Failed to add client');
+
+            await fetchClients(); // Refresh client list
+            resetForm();
+            setIsAddingClient(false);
+        } catch (error) {
+            console.error('Error adding client:', error);
+            alert('Error adding client. Please try again.');
+        }
     };
 
-    // Update existing client
-    const updateClient = () => {
-        // Simple validation
+    const updateClient = async () => {
         if (!currentClient.name || !currentClient.email || !currentClient.phone) {
             alert('Please fill all required fields');
             return;
         }
 
-        setClients(clients.map(client =>
-            client.id === currentClient.id ? currentClient : client
-        ));
-
-        resetForm();
-        setIsEditingClient(false);
-    };
-
-    // Delete client
-    const deleteClient = (id) => {
-        if (window.confirm('Are you sure you want to delete this client?')) {
-            setClients(clients.filter(client => client.id !== id));
+        try {
+            await fetch(`http://localhost:5001/api/client/updateClient/${currentClient.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentClient)
+            });
+            await fetchClients(); // Refresh client list
+            resetForm();
+            setIsEditingClient(false);
+        } catch (error) {
+            console.error('Error updating client:', error);
+            alert('Error updating client. Please try again.');
         }
     };
 
-    // Set up edit form
+    const deleteClient = async (id) => {
+        if (window.confirm('Are you sure you want to delete this client?')) {
+            try {
+                await fetch(`http://localhost:5001/api/client/deleteClient/${id}`, { method: 'DELETE' });
+                await fetchClients(); // Refresh client list
+            } catch (error) {
+                console.error('Error deleting client:', error);
+                alert('Error deleting client. Please try again.');
+            }
+        }
+    };
+
     const editClient = (client) => {
         setCurrentClient({ ...client });
         setIsEditingClient(true);
     };
 
-    // Reset form
     const resetForm = () => {
         setCurrentClient({
             id: null,
@@ -170,28 +151,32 @@ const Client = () => {
         });
     };
 
-    // Cancel form
     const cancelForm = () => {
         resetForm();
         setIsAddingClient(false);
         setIsEditingClient(false);
     };
 
-    // Close client details modal
     const closeClientDetails = () => {
         setShowClientDetails(false);
         setSelectedClient(null);
         setDealFilter('all');
     };
 
+    const filteredClients = (clients || []).filter(client => {
+        const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            client.phone.includes(searchTerm);
+
+        const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
+
+
+
     return (
         <div className="client-container">
-            {/* <header className="client-header">
-                <div className="client-header-content">
-                    <h1>Client Management</h1>
-                    <p>Manage your client portfolio</p>
-                </div>
-            </header> */}
 
             <div className="client-controls">
                 <div className="client-search">
@@ -227,7 +212,6 @@ const Client = () => {
                 </div>
             </div>
 
-            {/* Client List Section */}
             <div className="client-list-container">
                 {filteredClients.length > 0 ? (
                     <div className="client-list">
@@ -279,7 +263,6 @@ const Client = () => {
                 )}
             </div>
 
-            {/* Client Form Modal */}
             {(isAddingClient || isEditingClient) && (
                 <div className="client-modal-overlay">
                     <div className="client-modal">
@@ -353,7 +336,6 @@ const Client = () => {
                 </div>
             )}
 
-            {/* Client Details Modal */}
             {showClientDetails && selectedClient && (
                 <div className="client-modal-overlay">
                     <div className="client-modal client-details-modal">
