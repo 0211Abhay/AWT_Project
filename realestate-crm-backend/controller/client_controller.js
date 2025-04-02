@@ -16,13 +16,9 @@ exports.createClient = async (req, res) => {
     }
 };
 
-
-
 exports.getAllClients = async (req, res) => {
     try {
-        const clients = await Client.findAll({
-            attributes: ['client_id', 'broker_id', 'name', 'email', 'phone', 'address', 'created_at']
-        });
+        const clients = await Client.findAll();
         console.log('Fetched clients:', clients); // Debug log
         res.status(200).json(clients);
     } catch (error) {
@@ -66,13 +62,13 @@ exports.updateClient = async (req, res) => {
 // Delete a client
 exports.deleteClient = async (req, res) => {
     try {
-        const client = await Client.findByPk(req.params.id);
-        if (!client) {
+        const deleted = await Client.destroy({ where: { client_id: req.params.id } });
+        if (!deleted) {
             return res.status(404).json({ error: 'Client not found' });
         }
-        await client.destroy();
         res.status(200).json({ message: "Client deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
+
