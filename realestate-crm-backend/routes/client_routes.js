@@ -9,9 +9,9 @@ const {
 } = require('../controller/client_controller');
 
 router.post('/createClient', createClient);
-router.get("/getAllClient", getAllClients);
-router.get('getOneClient/:id', getClientById);
-router.put('updateClient/:id', updateClient);
-router.delete('deleteClient/:id', deleteClient);
+router.get('/getAllClient', getAllClients);
+router.get('/getOneClient/:id', getClientById);
+router.put('/updateClient/:id', updateClient);
+router.delete('/deleteClient/:id', deleteClient);
 
 module.exports = router;
