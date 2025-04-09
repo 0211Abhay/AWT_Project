@@ -1,9 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const passport = require('passport');
 const { sequelize } = require('./models');
 const authRoutes = require('./routes/auth');
+const googleAuthRoutes = require('./routes/google_auth');
 require('dotenv').config();
+require('./config/passport'); // Import Passport Google strategy
 
 const app = express();
 
@@ -29,8 +32,13 @@ app.use(session({
     }
 }));
 
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/google', googleAuthRoutes);
 
 // Test route
 app.get('/', (req, res) => {
