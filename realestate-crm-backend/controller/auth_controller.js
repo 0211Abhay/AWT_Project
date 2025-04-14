@@ -1,4 +1,4 @@
-const Broker = require("../models/Broker");
+const Broker = require("../models/broker");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();

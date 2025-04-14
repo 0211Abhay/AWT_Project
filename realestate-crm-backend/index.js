@@ -3,9 +3,10 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
-const { sequelize, Client, Broker } = require('./models'); // Import models properly
+const { sequelize, Client, Broker, Property } = require('./models'); // Import models properly
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/client_routes');
+const propertyRoutes = require('./routes/property_routes');
 
 require('dotenv').config();
 
@@ -36,6 +37,7 @@ app.use(session({
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);
+app.use('/api/property', propertyRoutes);
 
 // Test route
 app.get('/', (req, res) => {
