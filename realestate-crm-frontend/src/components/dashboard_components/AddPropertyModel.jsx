@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../../style/AddPropertyModel.css';
 
-const AddPropertyModel = ({ isOpen, onClose }) => {
+const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
     const [propertyData, setPropertyData] = useState({
         name: '',
         location: '',
@@ -23,6 +23,45 @@ const AddPropertyModel = ({ isOpen, onClose }) => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+
+    // Initialize form with property data if in edit mode
+    useEffect(() => {
+        if (propertyToEdit) {
+            setIsEditMode(true);
+
+            // Parse amenities if they're stored as a JSON string
+            let amenitiesArray = [];
+            if (propertyToEdit.amenities) {
+                try {
+                    amenitiesArray = JSON.parse(propertyToEdit.amenities);
+                } catch (e) {
+                    console.error('Error parsing amenities:', e);
+                    amenitiesArray = [];
+                }
+            }
+
+            setPropertyData({
+                name: propertyToEdit.name || '',
+                location: propertyToEdit.location || '',
+                price: propertyToEdit.price || '',
+                property_for: propertyToEdit.property_for || '',
+                property_type: propertyToEdit.property_type || '',
+                bedrooms: propertyToEdit.bedrooms || '',
+                bathrooms: propertyToEdit.bathrooms || '',
+                area: propertyToEdit.area || '',
+                contact_agent: propertyToEdit.contact_agent || '',
+                year_built: propertyToEdit.year_built || '',
+                status: propertyToEdit.status || 'Available',
+                description: propertyToEdit.description || '',
+                amenities: amenitiesArray,
+                images: propertyToEdit.images || []
+            });
+        } else {
+            setIsEditMode(false);
+            resetForm();
+        }
+    }, [propertyToEdit]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -117,13 +156,21 @@ const AddPropertyModel = ({ isOpen, onClose }) => {
                 year_built: propertyData.year_built || null,
                 status: propertyData.status,
                 description: propertyData.description || null,
-                amenities: JSON.stringify(propertyData.amenities)
+                amenities: propertyData.amenities
             };
 
-            console.log('Sending property data:', propertyPayload);
+            console.log(`${isEditMode ? 'Updating' : 'Sending'} property data:`, propertyPayload);
 
-            const response = await fetch('http://localhost:5001/api/property/createProperty', {
-                method: 'POST',
+            let url = 'http://localhost:5001/api/property/createProperty';
+            let method = 'POST';
+
+            if (isEditMode && propertyToEdit) {
+                url = `http://localhost:5001/api/property/updateProperty/${propertyToEdit.property_id}`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -131,25 +178,25 @@ const AddPropertyModel = ({ isOpen, onClose }) => {
             });
 
             const responseData = await response.json();
-            
+
             if (!response.ok) {
-                throw new Error(responseData.error || "Failed to add property");
+                throw new Error(responseData.error || `Failed to ${isEditMode ? 'update' : 'add'} property`);
             }
 
-            console.log('Property added successfully:', responseData);
-            setSuccess('Property added successfully!');
-            
+            console.log(`Property ${isEditMode ? 'updated' : 'added'} successfully:`, responseData);
+            setSuccess(`Property ${isEditMode ? 'updated' : 'added'} successfully!`);
+
             // Reset form after successful submission
             resetForm();
-            
+
             // Close modal after a short delay to show success message
             setTimeout(() => {
-                onClose();
+                onClose(true); // Pass true to indicate successful operation
             }, 1500);
-            
+
         } catch (error) {
-            console.error('Error adding property:', error);
-            setError(error.message || 'Failed to add property. Please try again.');
+            console.error(`Error ${isEditMode ? 'updating' : 'adding'} property:`, error);
+            setError(error.message || `Failed to ${isEditMode ? 'update' : 'add'} property. Please try again.`);
         } finally {
             setLoading(false);
         }
@@ -160,20 +207,20 @@ const AddPropertyModel = ({ isOpen, onClose }) => {
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Add New Property</h2>
-                
+                <h2>{isEditMode ? 'Edit Property' : 'Add New Property'}</h2>
+
                 {error && (
                     <div className="error-message">
                         <p>{error}</p>
                     </div>
                 )}
-                
+
                 {success && (
                     <div className="success-message">
                         <p>{success}</p>
                     </div>
                 )}
-                
+
                 <form onSubmit={handleSubmit}>
                     <div className="form-row">
                         <div className="form-group">
@@ -344,7 +391,7 @@ const AddPropertyModel = ({ isOpen, onClose }) => {
                             Cancel
                         </button>
                         <button type="submit" className="btn-submit" disabled={loading}>
-                            {loading ? 'Adding...' : 'Add Property'}
+                            {loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Save Changes' : 'Add Property')}
                         </button>
                     </div>
                 </form>

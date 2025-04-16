@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/navbar/Navbar';
 import Sidebar from '../components/sidebar/Sidebar';
@@ -9,10 +9,29 @@ import withSessionCheck from '../components/SessionCheck';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-    const [activeSection, setActiveSection] = useState('clients');
     const navigate = useNavigate();
     const location = useLocation();
     const { broker } = useAuth();
+    
+    // Extract the current section from the URL path
+    const getCurrentSectionFromPath = () => {
+        const path = location.pathname;
+        const section = path.split('/').filter(Boolean)[1]; // Get the section after /dashboard/
+        return section || 'clients'; // Default to 'clients' if no section is found
+    };
+    
+    const [activeSection, setActiveSection] = useState(getCurrentSectionFromPath());
+    
+    // Update the active section when the URL changes
+    useEffect(() => {
+        const currentSection = getCurrentSectionFromPath();
+        setActiveSection(currentSection);
+        
+        // If we're at /dashboard with no section, redirect to the active section
+        if (location.pathname === '/dashboard') {
+            navigate(`/dashboard/${currentSection}`);
+        }
+    }, [location.pathname, navigate]);
 
     const handleNavigation = (section) => {
         setActiveSection(section);
