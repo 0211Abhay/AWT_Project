@@ -20,7 +20,8 @@ const Properties = () => {
         area_max: '',
         year_built_min: '',
         year_built_max: '',
-        featured: false
+        featured: false,
+        location: ''
     });
     const [sortOption, setSortOption] = useState('newest');
     const [viewMode, setViewMode] = useState('grid');
@@ -37,9 +38,10 @@ const Properties = () => {
         locations: []
     });
 
-    // Add state for modal
+    // Add state for modals
     const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
-
+    const [propertyToEdit, setPropertyToEdit] = useState(null);
+    
     // Fetch properties from API
     const fetchProperties = async () => {
         try {
@@ -111,16 +113,28 @@ const Properties = () => {
         fetchProperties();
     }, []);
 
-    // Add function to open modal
+    // Open add property modal
     const openAddPropertyModal = () => {
+        setPropertyToEdit(null); // Ensure we're not in edit mode
         setIsAddPropertyModalOpen(true);
     };
 
-    // Add function to close modal
-    const closeAddPropertyModal = () => {
+    // Close add property modal
+    const closeAddPropertyModal = (refreshData = false) => {
         setIsAddPropertyModalOpen(false);
-        // Refresh properties after adding a new one
-        fetchProperties();
+        setPropertyToEdit(null);
+        
+        // Refresh property data if requested (after successful add/edit)
+        if (refreshData) {
+            fetchProperties();
+        }
+    };
+
+    // Open edit property modal
+    const openEditPropertyModal = (property) => {
+        setPropertyToEdit(property);
+        setIsAddPropertyModalOpen(true);
+        setIsViewingDetails(false); // Close the details modal
     };
 
     // Format price
@@ -144,8 +158,13 @@ const Properties = () => {
         // Type filter
         const matchesType = filters.type === 'all' || property.property_type === filters.type;
 
-        // Category filter
-        const matchesCategory = filters.category === 'all' || property.property_for === filters.category;
+        // Category filter - Fix case sensitivity issue
+        const matchesCategory = filters.category === 'all' || 
+            property.property_for === filters.category;
+
+        // Location filter - Add this filter
+        const matchesLocation = !filters.location || 
+            property.location === filters.location;
 
         // Price filter
         const aboveMinPrice = !filters.priceMin || property.price >= Number(filters.priceMin);
@@ -177,7 +196,7 @@ const Properties = () => {
         // Featured filter
         const matchesFeatured = !filters.featured || property.featured;
 
-        return matchesSearch && matchesType && matchesCategory &&
+        return matchesSearch && matchesType && matchesCategory && matchesLocation &&
             aboveMinPrice && belowMaxPrice && 
             matchesBedrooms && matchesBathrooms && matchesStatus &&
             aboveMinArea && belowMaxArea &&
@@ -228,7 +247,8 @@ const Properties = () => {
             area_max: '',
             year_built_min: '',
             year_built_max: '',
-            featured: false
+            featured: false,
+            location: ''
         });
         setSearchTerm('');
     };
@@ -332,7 +352,7 @@ const Properties = () => {
                         >
                             <option value="all">All Categories</option>
                             {filterOptions.propertyCategories.map(category => (
-                                <option key={category} value={category.toLowerCase()}>
+                                <option key={category} value={category}>
                                     For {category}
                                 </option>
                             ))}
@@ -647,6 +667,15 @@ const Properties = () => {
                                 <div className="modal-actions">
                                     <button className="contact-agent-btn">Contact Agent</button>
                                     <button className="schedule-viewing-btn">Schedule Viewing</button>
+                                    <button 
+                                        className="edit-property-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Prevent closing the modal
+                                            openEditPropertyModal(selectedProperty);
+                                        }}
+                                    >
+                                        Edit Property
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -654,10 +683,11 @@ const Properties = () => {
                 </div>
             )}
 
-            {/* Add Property Modal */}
+            {/* Add/Edit Property Modal */}
             <AddPropertyModel
                 isOpen={isAddPropertyModalOpen}
                 onClose={closeAddPropertyModal}
+                propertyToEdit={propertyToEdit}
             />
         </div>
     );

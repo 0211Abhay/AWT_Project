@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/navbar/Navbar';
 import Footer from './components/Footer/Footer';
 import Home from './pages/Home';
@@ -35,6 +35,7 @@ const App = () => {
           <Route path="/about" element={<FullLayout><About /></FullLayout>} />
           <Route path="/login" element={<HeaderOnlyLayout><Login /></HeaderOnlyLayout>} />
           <Route path="/signup" element={<HeaderOnlyLayout><SignUp /></HeaderOnlyLayout>} />
+          {/* Use a wildcard route for dashboard to handle all dashboard paths */}
           <Route path="/dashboard/*" element={
             <ProtectedRoute>
               <Dashboard />
