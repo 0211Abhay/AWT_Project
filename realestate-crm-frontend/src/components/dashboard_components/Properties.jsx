@@ -14,12 +14,28 @@ const Properties = () => {
         priceMin: '',
         priceMax: '',
         bedrooms: 'any',
+        bathrooms: 'any',
+        status: 'all',
+        area_min: '',
+        area_max: '',
+        year_built_min: '',
+        year_built_max: '',
         featured: false
     });
     const [sortOption, setSortOption] = useState('newest');
     const [viewMode, setViewMode] = useState('grid');
     const [selectedProperty, setSelectedProperty] = useState(null);
     const [isViewingDetails, setIsViewingDetails] = useState(false);
+    
+    // Add state for filter options
+    const [filterOptions, setFilterOptions] = useState({
+        propertyTypes: [],
+        propertyCategories: [],
+        bedroomOptions: [],
+        bathroomOptions: [],
+        statusOptions: [],
+        locations: []
+    });
 
     // Add state for modal
     const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
@@ -40,6 +56,9 @@ const Properties = () => {
             // Check if data has the expected structure
             if (data && data.properties) {
                 setProperties(data.properties);
+                
+                // Extract unique filter options from properties
+                extractFilterOptions(data.properties);
             } else {
                 console.error('Unexpected data structure:', data);
                 setProperties([]);
@@ -51,6 +70,40 @@ const Properties = () => {
             setError(error.message);
             setLoading(false);
         }
+    };
+    
+    // Extract unique filter options from properties
+    const extractFilterOptions = (propertiesData) => {
+        // Extract unique property types
+        const propertyTypes = [...new Set(propertiesData.map(p => p.property_type))].filter(Boolean);
+        
+        // Extract unique property categories (property_for)
+        const propertyCategories = [...new Set(propertiesData.map(p => p.property_for))].filter(Boolean);
+        
+        // Extract unique bedroom counts and sort them
+        const bedroomOptions = [...new Set(propertiesData.map(p => p.bedrooms))]
+            .filter(Boolean)
+            .sort((a, b) => a - b);
+            
+        // Extract unique bathroom counts and sort them
+        const bathroomOptions = [...new Set(propertiesData.map(p => p.bathrooms))]
+            .filter(Boolean)
+            .sort((a, b) => a - b);
+            
+        // Extract unique status options
+        const statusOptions = [...new Set(propertiesData.map(p => p.status))].filter(Boolean);
+        
+        // Extract unique locations
+        const locations = [...new Set(propertiesData.map(p => p.location))].filter(Boolean);
+        
+        setFilterOptions({
+            propertyTypes,
+            propertyCategories,
+            bedroomOptions,
+            bathroomOptions,
+            statusOptions,
+            locations
+        });
     };
 
     // Fetch properties on component mount
@@ -84,9 +137,9 @@ const Properties = () => {
     const filteredProperties = properties.filter(property => {
         // Search term filter
         const matchesSearch =
-            property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            property.description.toLowerCase().includes(searchTerm.toLowerCase());
+            property.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            property.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            property.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
         // Type filter
         const matchesType = filters.type === 'all' || property.property_type === filters.type;
@@ -103,12 +156,33 @@ const Properties = () => {
             filters.bedrooms === 'any' ||
             (filters.bedrooms === '4+' && property.bedrooms >= 4) ||
             property.bedrooms === Number(filters.bedrooms);
+            
+        // Bathrooms filter
+        const matchesBathrooms =
+            filters.bathrooms === 'any' ||
+            (filters.bathrooms === '4+' && property.bathrooms >= 4) ||
+            property.bathrooms === Number(filters.bathrooms);
+            
+        // Status filter
+        const matchesStatus = filters.status === 'all' || property.status === filters.status;
+        
+        // Area filter
+        const aboveMinArea = !filters.area_min || property.area >= Number(filters.area_min);
+        const belowMaxArea = !filters.area_max || property.area <= Number(filters.area_max);
+        
+        // Year built filter
+        const aboveMinYear = !filters.year_built_min || property.year_built >= Number(filters.year_built_min);
+        const belowMaxYear = !filters.year_built_max || property.year_built <= Number(filters.year_built_max);
 
         // Featured filter
         const matchesFeatured = !filters.featured || property.featured;
 
         return matchesSearch && matchesType && matchesCategory &&
-            aboveMinPrice && belowMaxPrice && matchesBedrooms && matchesFeatured;
+            aboveMinPrice && belowMaxPrice && 
+            matchesBedrooms && matchesBathrooms && matchesStatus &&
+            aboveMinArea && belowMaxArea &&
+            aboveMinYear && belowMaxYear &&
+            matchesFeatured;
     });
 
     // Sort properties
@@ -122,6 +196,10 @@ const Properties = () => {
                 return b.price - a.price;
             case 'priceLow':
                 return a.price - b.price;
+            case 'areaHigh':
+                return b.area - a.area;
+            case 'areaLow':
+                return a.area - b.area;
             default:
                 return 0;
         }
@@ -144,6 +222,12 @@ const Properties = () => {
             priceMin: '',
             priceMax: '',
             bedrooms: 'any',
+            bathrooms: 'any',
+            status: 'all',
+            area_min: '',
+            area_max: '',
+            year_built_min: '',
+            year_built_max: '',
             featured: false
         });
         setSearchTerm('');
@@ -231,9 +315,11 @@ const Properties = () => {
                             onChange={handleFilterChange}
                         >
                             <option value="all">All Types</option>
-                            <option value="residential">Residential</option>
-                            <option value="commercial">Commercial</option>
-                            <option value="land">Land</option>
+                            {filterOptions.propertyTypes.map(type => (
+                                <option key={type} value={type}>
+                                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -245,8 +331,11 @@ const Properties = () => {
                             onChange={handleFilterChange}
                         >
                             <option value="all">All Categories</option>
-                            <option value="sale">For Sale</option>
-                            <option value="rent">For Rent</option>
+                            {filterOptions.propertyCategories.map(category => (
+                                <option key={category} value={category.toLowerCase()}>
+                                    For {category}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -279,10 +368,103 @@ const Properties = () => {
                             onChange={handleFilterChange}
                         >
                             <option value="any">Any</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
+                            {filterOptions.bedroomOptions.map(count => (
+                                <option key={count} value={count}>
+                                    {count}
+                                </option>
+                            ))}
                             <option value="4+">4+</option>
+                        </select>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Bathrooms</label>
+                        <select
+                            name="bathrooms"
+                            value={filters.bathrooms}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="any">Any</option>
+                            {filterOptions.bathroomOptions.map(count => (
+                                <option key={count} value={count}>
+                                    {count}
+                                </option>
+                            ))}
+                            <option value="4+">4+</option>
+                        </select>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Status</label>
+                        <select
+                            name="status"
+                            value={filters.status}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="all">All Statuses</option>
+                            {filterOptions.statusOptions.map(status => (
+                                <option key={status} value={status}>
+                                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Area (sq ft)</label>
+                        <div className="price-inputs">
+                            <input
+                                type="number"
+                                name="area_min"
+                                placeholder="Min"
+                                value={filters.area_min}
+                                onChange={handleFilterChange}
+                            />
+                            <span className="price-separator">-</span>
+                            <input
+                                type="number"
+                                name="area_max"
+                                placeholder="Max"
+                                value={filters.area_max}
+                                onChange={handleFilterChange}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Year Built</label>
+                        <div className="price-inputs">
+                            <input
+                                type="number"
+                                name="year_built_min"
+                                placeholder="From"
+                                value={filters.year_built_min}
+                                onChange={handleFilterChange}
+                            />
+                            <span className="price-separator">-</span>
+                            <input
+                                type="number"
+                                name="year_built_max"
+                                placeholder="To"
+                                value={filters.year_built_max}
+                                onChange={handleFilterChange}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Location</label>
+                        <select
+                            name="location"
+                            value={filters.location}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="">All Locations</option>
+                            {filterOptions.locations.map(location => (
+                                <option key={location} value={location}>
+                                    {location}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -308,6 +490,8 @@ const Properties = () => {
                             <option value="oldest">Oldest First</option>
                             <option value="priceLow">Price: Low to High</option>
                             <option value="priceHigh">Price: High to Low</option>
+                            <option value="areaLow">Area: Low to High</option>
+                            <option value="areaHigh">Area: High to Low</option>
                         </select>
                     </div>
                 </aside>
@@ -445,8 +629,13 @@ const Properties = () => {
                                 <div className="modal-amenities">
                                     <h3>Amenities</h3>
                                     <ul className="amenities-list">
-                                        {/* Using a placeholder amenity since we don't have actual amenities */}
-                                        <li className="amenity-item">Amenity 1</li>
+                                        {selectedProperty.amenities ? (
+                                            JSON.parse(selectedProperty.amenities).map((amenity) => (
+                                                <li key={amenity} className="amenity-item">{amenity}</li>
+                                            ))
+                                        ) : (
+                                            <li className="amenity-item">No amenities listed</li>
+                                        )}
                                     </ul>
                                 </div>
 
