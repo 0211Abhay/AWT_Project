@@ -14,6 +14,7 @@ const sequelize = new Sequelize(
 const Broker = require('./broker')(sequelize);
 const Client = require('./clients_model')(sequelize);
 const Property = require('./Property')(sequelize);
+const Schedule = require('./schedule')(sequelize);
 // Define associations
 Broker.hasMany(Client, { foreignKey: 'broker_id' });
 Client.belongsTo(Broker, { foreignKey: 'broker_id' });
