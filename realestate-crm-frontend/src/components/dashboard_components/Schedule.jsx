@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckSquare, Square, XSquare, Bell, Users, MapPin, Search, Clock, CheckCircle, XCircle } from 'lucide-react';
+import axios from 'axios';
 import "../../style/Schedule.css";
 
 const Schedule = () => {
@@ -7,105 +8,149 @@ const Schedule = () => {
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedVisit, setSelectedVisit] = useState(null);
+    const [clientName, setClientName] = useState('');
     const [showNewVisitForm, setShowNewVisitForm] = useState(false);
+    const [visits, setVisits] = useState([]);
+    const [properties, setProperties] = useState([]);
+    const [clients, setClients] = useState([]);
+    // Broker selection removed
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [dashboardMetrics, setDashboardMetrics] = useState({
+        totalScheduled: 0,
+        completedThisMonth: 0,
+        cancelledThisMonth: 0,
+        conversionRate: 0
+    });
+
     const [newVisitData, setNewVisitData] = useState({
         date: '',
         time: '',
-        property: '',
-        client: '',
-        contactNumber: '',
-        email: '',
-        notes: ''
+        property_id: '',
+        client_id: '',
+        description: ''
+        // broker_id is fixed to 1, so removed from state
     });
 
-    // Sample data
-    const visits = [
-        {
-            id: 1,
-            property: "Oceanview Apartment",
-            client: "James Wilson",
-            date: "2023-11-12",
-            time: "10:00 AM",
-            status: "scheduled",
-            contactNumber: "+1 (123) 456-7890",
-            email: "james@example.com",
-            notes: "Client is interested in 2-bedroom apartments with ocean view. Budget around $500,000."
-        },
-        {
-            id: 2,
-            property: "Downtown Loft",
-            client: "Emily Rodriguez",
-            date: "2023-11-10",
-            time: "2:30 PM",
-            status: "scheduled",
-            contactNumber: "+1 (234) 567-8901",
-            email: "emily@example.com",
-            notes: "Client prefers modern design. Looking for investment property."
-        },
-        {
-            id: 3,
-            property: "Sunset Villa",
-            client: "Michael Chen",
-            date: "2023-11-05",
-            time: "4:00 PM",
-            status: "completed",
-            contactNumber: "+1 (345) 678-9012",
-            email: "michael@example.com",
-            notes: "Client loved the property. Following up with financing options."
-        },
-        {
-            id: 4,
-            property: "Parkside Condo",
-            client: "Sarah Johnson",
-            date: "2023-11-08",
-            time: "11:30 AM",
-            status: "cancelled",
-            contactNumber: "+1 (456) 789-0123",
-            email: "sarah@example.com",
-            notes: "Client cancelled due to schedule conflict. Wants to reschedule next week."
-        },
-        {
-            id: 5,
-            property: "Riverside House",
-            client: "David Kim",
-            date: "2023-11-15",
-            time: "1:00 PM",
-            status: "scheduled",
-            contactNumber: "+1 (567) 890-1234",
-            email: "david@example.com",
-            notes: "Client is relocating from another city. Needs property close to downtown."
-        },
-    ];
+    // Fetch all schedules, properties, clients, and brokers
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                // Fetch schedules
+                const schedulesResponse = await axios.get('http://localhost:5001/api/schedule');
 
-    // Properties for dropdown
-    const properties = [
-        "Oceanview Apartment",
-        "Downtown Loft",
-        "Sunset Villa",
-        "Parkside Condo",
-        "Riverside House",
-        "Maple Heights",
-        "Grove Terrace",
-        "Hillside Retreat"
-    ];
+                // Fetch properties for broker_id = 1
+                const propertiesResponse = await axios.get('http://localhost:5001/api/property/getAllProperty');
+                console.log('Fetched properties:', propertiesResponse.data);
 
-    // Clients for dropdown
-    const clients = [
-        "James Wilson",
-        "Emily Rodriguez",
-        "Michael Chen",
-        "Sarah Johnson",
-        "David Kim",
-        "Lisa Brown",
-        "Robert Taylor",
-        "Amanda Lee"
-    ];
+                // Fetch clients for broker_id = 1
+                const clientsResponse = await axios.get('http://localhost:5001/api/client/getAllClient');
+                console.log('Fetched clients:', clientsResponse.data);
+
+                // Use broker_id = 1 as the default
+                const currentBrokerId = 1;
+
+                // Transform schedule data to match the component's expected format
+                const formattedSchedules = schedulesResponse.data.map(schedule => ({
+                    id: schedule.schedule_id,
+                    property: schedule.property ? schedule.property.name : 'Unknown Property',
+                    property_id: schedule.property_id,
+                    client: schedule.client ? `${schedule.client.first_name} ${schedule.client.last_name}` : 'Unknown Client',
+                    client_id: schedule.client_id,
+                    broker_id: schedule.broker_id,
+                    broker: schedule.broker ? `${schedule.broker.first_name} ${schedule.broker.last_name}` : 'Unknown Broker',
+                    date: new Date(schedule.date).toISOString().split('T')[0],
+                    time: new Date(schedule.date + ' ' + schedule.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    status: schedule.status.toLowerCase(),
+                    contactNumber: schedule.client ? schedule.client.phone : '',
+                    email: schedule.client ? schedule.client.email : '',
+                    notes: schedule.description || ''
+                }));
+
+                // Get properties from the correct data structure and filter by broker_id = 1
+                // Based on the console log, properties are in propertiesResponse.data.properties
+                const properties = propertiesResponse.data.properties || [];
+                console.log('Properties array:', properties);
+
+                const formattedProperties = properties
+                    .filter(property => property.broker_id === 1)
+                    .map(property => ({
+                        property_id: property.property_id,
+                        name: property.name || property.title || 'Unnamed Property'
+                    }));
+                console.log('Filtered properties for broker_id=1:', formattedProperties);
+
+                // Format clients data for broker_id = 1
+                // clientsResponse.data is already an array based on the console log
+                const clients = clientsResponse.data || [];
+                console.log('Clients array:', clients);
+
+                const formattedClients = clients
+                    .filter(client => client.broker_id === 1)
+                    .map(client => ({
+                        client_id: client.client_id,
+                        first_name: client.first_name || client.name.split(' ')[0] || '',
+                        last_name: client.last_name || (client.name.split(' ').length > 1 ? client.name.split(' ')[1] : ''),
+                        phone: client.phone,
+                        email: client.email
+                    }));
+                console.log('Filtered clients for broker_id=1:', formattedClients);
+
+                setVisits(formattedSchedules);
+                setProperties(formattedProperties);
+                setClients(formattedClients);
+                // No longer need to set brokers as we're using a fixed broker_id
+
+                // Calculate dashboard metrics
+                const currentDate = new Date();
+                const currentMonth = currentDate.getMonth();
+                const currentYear = currentDate.getFullYear();
+
+                const scheduledVisits = formattedSchedules.filter(visit => visit.status === 'pending');
+                const completedVisitsThisMonth = formattedSchedules.filter(visit => {
+                    const visitDate = new Date(visit.date);
+                    return visit.status === 'completed' &&
+                        visitDate.getMonth() === currentMonth &&
+                        visitDate.getFullYear() === currentYear;
+                });
+                const cancelledVisitsThisMonth = formattedSchedules.filter(visit => {
+                    const visitDate = new Date(visit.date);
+                    return visit.status === 'cancelled' &&
+                        visitDate.getMonth() === currentMonth &&
+                        visitDate.getFullYear() === currentYear;
+                });
+
+                // Calculate conversion rate (completed / total) * 100
+                const totalVisitsThisMonth = completedVisitsThisMonth.length + cancelledVisitsThisMonth.length;
+                const conversionRate = totalVisitsThisMonth > 0
+                    ? Math.round((completedVisitsThisMonth.length / totalVisitsThisMonth) * 100)
+                    : 0;
+
+                setDashboardMetrics({
+                    totalScheduled: scheduledVisits.length,
+                    completedThisMonth: completedVisitsThisMonth.length,
+                    cancelledThisMonth: cancelledVisitsThisMonth.length,
+                    conversionRate: conversionRate
+                });
+
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                setError('Failed to load data. Please try again later.');
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     // Filter visits based on status and search query
     const filteredVisits = visits.filter(visit => {
         const matchesStatus = filterStatus === 'all' || visit.status === filterStatus;
-        const matchesSearch = visit.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            visit.client.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch =
+            (visit.property && visit.property.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (visit.client && visit.client.toLowerCase().includes(searchQuery.toLowerCase()));
         return matchesStatus && matchesSearch;
     });
 
@@ -126,14 +171,109 @@ const Schedule = () => {
     };
 
     // Handle status change
-    const handleStatusChange = (id, newStatus) => {
-        console.log(`Changing visit ${id} status to ${newStatus}`);
-        // In a real app, update the state or call an API
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            console.log(`Changing visit ${id} status to ${newStatus}`);
+
+            // Map frontend status to backend status format
+            const statusMap = {
+                'scheduled': 'Pending',
+                'completed': 'Completed',
+                'cancelled': 'Cancelled',
+                'pending': 'Pending'
+            };
+
+            const backendStatus = statusMap[newStatus];
+            console.log('Backend status:', backendStatus);
+
+            if (!backendStatus) {
+                throw new Error(`Invalid status: ${newStatus}`);
+            }
+
+            // Update status in the backend
+            const response = await axios.patch(`http://localhost:5001/api/schedule/${id}/status`, {
+                status: backendStatus
+            });
+
+            console.log('Status update response:', response.data);
+
+            // Show success message
+            alert(`Schedule status updated to ${newStatus}`);
+
+            // Update local state
+            setVisits(prevVisits =>
+                prevVisits.map(visit =>
+                    visit.id === id ? { ...visit, status: newStatus } : visit
+                )
+            );
+
+            // If the selected visit is the one being updated, update it too
+            if (selectedVisit && selectedVisit.id === id) {
+                setSelectedVisit({ ...selectedVisit, status: newStatus });
+            }
+
+            // Recalculate dashboard metrics
+            const currentDate = new Date();
+            const currentMonth = currentDate.getMonth();
+            const currentYear = currentDate.getFullYear();
+
+            const updatedVisits = visits.map(visit =>
+                visit.id === id ? { ...visit, status: newStatus } : visit
+            );
+
+            const scheduledVisits = updatedVisits.filter(visit => visit.status === 'pending' || visit.status === 'scheduled');
+            const completedVisitsThisMonth = updatedVisits.filter(visit => {
+                const visitDate = new Date(visit.date);
+                return visit.status === 'completed' &&
+                    visitDate.getMonth() === currentMonth &&
+                    visitDate.getFullYear() === currentYear;
+            });
+            const cancelledVisitsThisMonth = updatedVisits.filter(visit => {
+                const visitDate = new Date(visit.date);
+                return visit.status === 'cancelled' &&
+                    visitDate.getMonth() === currentMonth &&
+                    visitDate.getFullYear() === currentYear;
+            });
+
+            // Calculate conversion rate
+            const totalVisitsThisMonth = completedVisitsThisMonth.length + cancelledVisitsThisMonth.length;
+            const conversionRate = totalVisitsThisMonth > 0
+                ? Math.round((completedVisitsThisMonth.length / totalVisitsThisMonth) * 100)
+                : 0;
+
+            setDashboardMetrics({
+                totalScheduled: scheduledVisits.length,
+                completedThisMonth: completedVisitsThisMonth.length,
+                cancelledThisMonth: cancelledVisitsThisMonth.length,
+                conversionRate: conversionRate
+            });
+
+        } catch (error) {
+            console.error('Error updating visit status:', error);
+            alert(`Failed to update visit status: ${error.message}`);
+        }
+    };
+
+    // Fetch client name by ID
+    const fetchClientName = async (clientId) => {
+        try {
+            const response = await axios.get(`http://localhost:5001/api/client/getClientName/${clientId}`);
+            return response.data.clientName;
+        } catch (error) {
+            console.error('Error fetching client name:', error);
+            return 'Unknown Client';
+        }
     };
 
     // Handle visit selection
-    const handleVisitSelect = (visit) => {
+    const handleVisitSelect = async (visit) => {
         setSelectedVisit(visit);
+        if (visit && visit.client_id) {
+            const name = await fetchClientName(visit.client_id);
+            setClientName(name);
+        } else {
+            setClientName('Unknown Client');
+        }
     };
 
     // Handle new visit form input change
@@ -146,29 +286,72 @@ const Schedule = () => {
     };
 
     // Handle form submission
-    const handleSubmitVisit = (e) => {
+    const handleSubmitVisit = async (e) => {
         e.preventDefault();
-        console.log('New visit data:', newVisitData);
-        // In a real app, save the data and update state
-        setShowNewVisitForm(false);
-        setNewVisitData({
-            date: '',
-            time: '',
-            property: '',
-            client: '',
-            contactNumber: '',
-            email: '',
-            notes: ''
-        });
+
+        try {
+            // Using fixed broker_id = 1
+            const currentBrokerId = 1;
+            console.log('Using broker ID:', currentBrokerId);
+
+            // Format the data for the backend
+            const scheduleData = {
+                property_id: parseInt(newVisitData.property_id),
+                client_id: parseInt(newVisitData.client_id),
+                broker_id: currentBrokerId, // Fixed broker_id = 1
+                description: newVisitData.description,
+                date: newVisitData.date,
+                time: newVisitData.time,
+                status: 'Pending' // Default status for new visits
+            };
+
+            // Send data to the backend
+            const response = await axios.post('http://localhost:5001/api/schedule', scheduleData);
+
+            // Format the new visit to match the component's expected format
+            const newVisit = {
+                id: response.data.schedule_id,
+                property: response.data.property ? response.data.property.name : 'Unknown Property',
+                property_id: response.data.property_id,
+                client: response.data.client ? `${response.data.client.first_name} ${response.data.client.last_name}` : 'Unknown Client',
+                client_id: response.data.client_id,
+                broker_id: response.data.broker_id,
+                broker: response.data.broker ? `${response.data.broker.first_name} ${response.data.broker.last_name}` : 'Unknown Broker',
+                date: new Date(response.data.date).toISOString().split('T')[0],
+                time: new Date(response.data.date + ' ' + response.data.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                status: 'pending',
+                contactNumber: response.data.client ? response.data.client.phone : '',
+                email: response.data.client ? response.data.client.email : '',
+                notes: response.data.description || ''
+            };
+
+            // Update visits state with the new visit
+            setVisits(prevVisits => [...prevVisits, newVisit]);
+
+            // Update dashboard metrics
+            setDashboardMetrics(prev => ({
+                ...prev,
+                totalScheduled: prev.totalScheduled + 1
+            }));
+
+            // Close the form and reset the form data
+            setShowNewVisitForm(false);
+            setNewVisitData({
+                date: '',
+                time: '',
+                property_id: '',
+                client_id: '',
+                description: ''
+                // broker_id is fixed to 1, so removed from state
+            });
+
+        } catch (error) {
+            console.error('Error creating visit:', error);
+            alert('Failed to create visit. Please try again.');
+        }
     };
 
-    // Dashboard metrics
-    const dashboardMetrics = {
-        totalScheduled: 3,
-        completedThisMonth: 5,
-        cancelledThisMonth: 1,
-        conversionRate: 70
-    };
+    // Dashboard metrics are now managed in state and calculated in the useEffect
 
     // Generate days for the calendar view
     const generateCalendarDays = () => {
@@ -387,7 +570,7 @@ const Schedule = () => {
                                             </td>
                                             <td>
                                                 <div className="action-buttons-container">
-                                                    {visit.status === 'scheduled' && (
+                                                    {(visit.status === 'scheduled' || visit.status === 'pending') && (
                                                         <>
                                                             <button
                                                                 className="action-btn complete-btn"
@@ -455,7 +638,7 @@ const Schedule = () => {
 
                                             <div className="detail-section">
                                                 <h4>Client Information</h4>
-                                                <p><strong>Name:</strong> {selectedVisit.client}</p>
+                                                <p><strong>Name:</strong> {clientName}</p>
                                                 <p><strong>Phone:</strong> {selectedVisit.contactNumber}</p>
                                                 <p><strong>Email:</strong> {selectedVisit.email}</p>
                                             </div>
@@ -568,14 +751,16 @@ const Schedule = () => {
                                     <div className="form-group">
                                         <label>Property</label>
                                         <select
-                                            name="property"
-                                            value={newVisitData.property}
+                                            name="property_id"
+                                            value={newVisitData.property_id}
                                             onChange={handleInputChange}
                                             required
                                         >
                                             <option value="">Select Property</option>
-                                            {properties.map((property, index) => (
-                                                <option key={index} value={property}>{property}</option>
+                                            {properties.map((property) => (
+                                                <option key={property.property_id} value={property.property_id}>
+                                                    {property.name}
+                                                </option>
                                             ))}
                                         </select>
                                     </div>
@@ -585,47 +770,29 @@ const Schedule = () => {
                                     <div className="form-group">
                                         <label>Client</label>
                                         <select
-                                            name="client"
-                                            value={newVisitData.client}
+                                            name="client_id"
+                                            value={newVisitData.client_id}
                                             onChange={handleInputChange}
                                             required
                                         >
                                             <option value="">Select Client</option>
-                                            {clients.map((client, index) => (
-                                                <option key={index} value={client}>{client}</option>
+                                            {clients.map((client) => (
+                                                <option key={client.client_id} value={client.client_id}>
+                                                    {client.first_name} {client.last_name}
+                                                </option>
                                             ))}
                                         </select>
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Contact Number</label>
-                                        <input
-                                            type="tel"
-                                            name="contactNumber"
-                                            value={newVisitData.contactNumber}
-                                            onChange={handleInputChange}
-                                            placeholder="(123) 456-7890"
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label>Email</label>
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={newVisitData.email}
-                                            onChange={handleInputChange}
-                                            placeholder="client@example.com"
-                                        />
                                     </div>
                                 </div>
                             </div>
 
+                            {/* Broker selection removed as requested */}
+
                             <div className="form-group">
                                 <label>Notes & Instructions</label>
                                 <textarea
-                                    name="notes"
-                                    value={newVisitData.notes}
+                                    name="description"
+                                    value={newVisitData.description}
                                     onChange={handleInputChange}
                                     placeholder="Add any details about the visit or client preferences"
                                     rows="4"

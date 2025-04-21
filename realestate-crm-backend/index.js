@@ -7,6 +7,7 @@ const { sequelize, Client, Broker, Property } = require('./models'); // Import m
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/client_routes');
 const propertyRoutes = require('./routes/property_routes');
+const scheduleRoutes = require('./routes/schedule_routes');
 
 require('dotenv').config();
 
@@ -38,6 +39,7 @@ app.use(session({
 app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/property', propertyRoutes);
+app.use('/api/schedule', scheduleRoutes);
 
 // Test route
 app.get('/', (req, res) => {

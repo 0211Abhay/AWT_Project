@@ -19,12 +19,23 @@ const Schedule = require('./schedule')(sequelize);
 Broker.hasMany(Client, { foreignKey: 'broker_id' });
 Client.belongsTo(Broker, { foreignKey: 'broker_id' });
 
+// Set up Schedule associations
+Property.hasMany(Schedule, { foreignKey: 'property_id', as: 'schedules' });
+Schedule.belongsTo(Property, { foreignKey: 'property_id', as: 'property' });
+
+Client.hasMany(Schedule, { foreignKey: 'client_id', as: 'schedules' });
+Schedule.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+
+Broker.hasMany(Schedule, { foreignKey: 'broker_id', as: 'schedules' });
+Schedule.belongsTo(Broker, { foreignKey: 'broker_id', as: 'broker' });
+
 const db = {
     sequelize,
     Sequelize,
     Broker,
     Client,
-    Property
+    Property,
+    Schedule
 };
 
 module.exports = db;
