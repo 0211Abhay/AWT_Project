@@ -650,9 +650,28 @@ const Properties = () => {
                                     <h3>Amenities</h3>
                                     <ul className="amenities-list">
                                         {selectedProperty.amenities ? (
-                                            JSON.parse(selectedProperty.amenities).map((amenity) => (
-                                                <li key={amenity} className="amenity-item">{amenity}</li>
-                                            ))
+                                            (() => {
+                                                let amenitiesArray;
+                                                try {
+                                                    // If it's already an array, use it directly
+                                                    if (Array.isArray(selectedProperty.amenities)) {
+                                                        amenitiesArray = selectedProperty.amenities;
+                                                    } else {
+                                                        // Otherwise try to parse it as JSON
+                                                        amenitiesArray = JSON.parse(selectedProperty.amenities);
+                                                        // Ensure the parsed result is an array
+                                                        if (!Array.isArray(amenitiesArray)) {
+                                                            amenitiesArray = [amenitiesArray];
+                                                        }
+                                                    }
+                                                    return amenitiesArray.map((amenity) => (
+                                                        <li key={amenity} className="amenity-item">{amenity}</li>
+                                                    ));
+                                                } catch (error) {
+                                                    console.error("Error parsing amenities:", error);
+                                                    return <li className="amenity-item">Error displaying amenities</li>;
+                                                }
+                                            })()
                                         ) : (
                                             <li className="amenity-item">No amenities listed</li>
                                         )}
