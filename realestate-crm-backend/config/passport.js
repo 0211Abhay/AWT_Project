@@ -1,6 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const { Broker } = require('../models'); // Assuming `Broker` is the user model
+const { Broker } = require('../models');
+const bcrypt = require('bcrypt'); // Add this line
 require('dotenv').config();
 
 passport.use(new GoogleStrategy({
@@ -13,11 +14,14 @@ async (accessToken, refreshToken, profile, done) => {
         let broker = await Broker.findOne({ where: { email: profile.emails[0].value } });
 
         if (!broker) {
-            // Create new broker if not found
+            // Generate a random password for Google-authenticated users
+            const randomPassword = Math.random().toString(36).slice(-8);
+            const password_hash = await bcrypt.hash(randomPassword, 10);
+
             broker = await Broker.create({
                 name: profile.displayName,
                 email: profile.emails[0].value,
-                password_hash: null // Since Google auth is used, no password
+                password_hash: password_hash // Use the generated hash instead of null
             });
         }
 
