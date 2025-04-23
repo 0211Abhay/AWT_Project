@@ -7,6 +7,7 @@ import withSessionCheck from '../components/SessionCheck';
 import GoogleButton from 'react-google-button'
 
 import "../style/Login.css";
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -88,12 +89,16 @@ const Login = () => {
                         Sign in to Broker Dashboard
                     </button>
                 </form>
+
                 <div className='google-login-div'>
 
                     <GoogleButton className='google-button' style={{ width: '350px', borderRadius: '0px' }}
                         onClick={() => { console.log('Google button clicked') }}
                     />
                 </div>
+
+
+                <GoogleLoginButton/>
 
                 <div className="auth-footer">
                     <p>

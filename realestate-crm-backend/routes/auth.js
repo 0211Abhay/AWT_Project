@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { Broker } = require('../models');
 const { isAuthenticated } = require('../middleware/auth');
+const passport = require('passport');
 
 // Register new broker
 router.post('/register', async (req, res) => {
@@ -107,6 +108,21 @@ router.post('/logout', isAuthenticated, (req, res) => {
         }
         res.clearCookie('connect.sid');
         res.json({ message: 'Logged out successfully' });
+    });
+});
+
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback', passport.authenticate('google', {
+    failureRedirect: 'http://localhost:5173/login',
+    session: true
+}), (req, res) => {
+    res.redirect('http://localhost:5173/dashboard'); // Redirect to frontend
+});
+
+router.get('/logout', (req, res) => {
+    req.logout(() => {
+        res.redirect('http://localhost:5173/login');
     });
 });
 
