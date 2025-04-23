@@ -12,8 +12,8 @@ const scheduleRoutes = require('./routes/schedule_routes');
 
 
 const passport = require('passport');
-const { sequelize } = require('./models');
-const authRoutes = require('./routes/auth');
+
+
 const googleAuthRoutes = require('./routes/google_auth');
 
 require('dotenv').config();
