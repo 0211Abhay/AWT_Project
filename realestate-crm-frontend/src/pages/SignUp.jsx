@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Phone } from "lucide-react";
 import axios from "axios";
 import "../style/Login.css";
+import GoogleButton from 'react-google-button'
 
 const SignUp = () => {
     const [name, setName] = useState("");
@@ -108,8 +109,14 @@ const SignUp = () => {
                     <button type="submit" className="submit-button">
                         Register as Broker
                     </button>
-                </form>
 
+                </form>
+                <div className='google-login-div'>
+
+                    <GoogleButton className='google-button' style={{ width: '300px', borderRadius: '0px' }}
+                        onClick={() => { console.log('Google button clicked') }}
+                    />
+                </div>
                 <div className="auth-footer">
                     <p>
                         Already have a broker account?{" "}
