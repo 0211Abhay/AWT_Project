@@ -1,10 +1,21 @@
+
+
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+
+const { sequelize, Client, Broker, Property } = require('./models'); // Import models properly
+const authRoutes = require('./routes/auth');
+const clientRoutes = require('./routes/client_routes');
+const propertyRoutes = require('./routes/property_routes');
+const scheduleRoutes = require('./routes/schedule_routes');
+
+
 const passport = require('passport');
 const { sequelize } = require('./models');
 const authRoutes = require('./routes/auth');
 const googleAuthRoutes = require('./routes/google_auth');
+
 require('dotenv').config();
 require('./config/passport'); // Import Passport Google strategy
 
@@ -38,7 +49,13 @@ app.use(passport.session());
 
 // Routes
 app.use('/api/auth', authRoutes);
+
+app.use('/api/client', clientRoutes);
+app.use('/api/property', propertyRoutes);
+app.use('/api/schedule', scheduleRoutes);
+
 app.use('/api/auth/google', googleAuthRoutes);
+
 
 // Test route
 app.get('/', (req, res) => {
@@ -47,17 +64,20 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5001;
 
-// Database connection and server start
+// Database connection and model sync
 const startServer = async () => {
     try {
         await sequelize.authenticate();
-        console.log('Database connected successfully');
+        console.log('✅ Database connected successfully');
+
+        // ✅ Sync models with the database
+        await sequelize.sync({ alter: true }); // Creates or updates tables automatically
 
         app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
+            console.log(`🚀 Server running on port ${PORT}`);
         });
     } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        console.error('❌ Unable to connect to the database:', error);
         process.exit(1);
     }
 };

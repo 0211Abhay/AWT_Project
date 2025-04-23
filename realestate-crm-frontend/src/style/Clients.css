@@ -109,6 +109,73 @@
     transform: translateY(-2px);
 }
 
+.clients-list {
+    width: 100%;
+    margin-top: 20px;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px var(--shadow-color);
+    overflow: hidden;
+}
+
+.clients-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.clients-list th {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid white;
+}
+
+.clients-list td {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.clients-list tr:hover {
+    background-color: #f8f9fa;
+}
+
+.clients-list tr:last-child td {
+    border-bottom: none;
+}
+
+/* Action buttons in table */
+.edit-btn {
+    background-color: var(--success-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+}
+
+.edit-btn:hover {
+    background-color: #2e7d32;
+}
+
+.delete-btn {
+    background-color: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+}
+
+.delete-btn:hover {
+    background-color: #c62828;
+}
+
 .client-list-container {
     background-color: white;
     border-radius: var(--border-radius);
@@ -303,172 +370,91 @@
 
 /* Form */
 .client-form {
+    background: white;
     padding: 25px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px var(--shadow-color);
+    margin: 20px 0;
+}
+
+.client-form h2 {
+    margin: 0 0 20px 0;
+    color: var(--dark-color);
+    font-size: 24px;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
+    margin-bottom: 5px;
     color: var(--dark-color);
+    font-weight: 500;
 }
 
-.form-group input,
-.form-group select {
+.form-group input {
     width: 100%;
-    padding: 12px 15px;
+    padding: 10px;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 16px;
-    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+    transition: border-color var(--transition-speed);
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.form-group input:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.25);
     outline: none;
 }
 
-.form-actions {
+.form-buttons {
     display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-top: 25px;
+    gap: 10px;
+    margin-top: 20px;
 }
 
-.cancel-btn,
-.save-btn {
-    padding: 12px 20px;
+.submit-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
     border-radius: var(--border-radius);
+    padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
     transition: background-color var(--transition-speed);
 }
 
-.cancel-btn {
-    background-color: var(--light-color);
-    border: 1px solid var(--border-color);
-    color: var(--dark-color);
-}
-
-.cancel-btn:hover {
-    background-color: #e2e6ea;
-}
-
-.save-btn {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-}
-
-.save-btn:hover {
+.submit-btn:hover {
     background-color: #2a75e6;
 }
 
-.client-details-content {
-    padding: 25px;
-}
-
-.client-info {
-    background-color: #f8f9fa;
-    padding: 15px 20px;
+.cancel-btn {
+    background-color: var(--gray-color);
+    color: white;
+    border: none;
     border-radius: var(--border-radius);
-    margin-bottom: 25px;
-}
-
-.client-info p {
-    margin: 8px 0;
-}
-
-.status-badge {
-    padding: 3px 10px;
-    border-radius: 50px;
-    font-size: 14px;
-}
-
-.deals-section {
-    margin-top: 20px;
-}
-
-.deals-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.deals-header h3 {
-    margin: 0;
-    font-size: 20px;
-}
-
-.deal-type-select {
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-size: 14px;
-    background-color: white;
-}
-
-.deals-list {
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    overflow: hidden;
-}
-
-.deal-list-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    padding: 12px 15px;
-    background-color: #f2f2f2;
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.deal-item {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    padding: 12px 15px;
-    border-top: 1px solid var(--border-color);
-    align-items: center;
-    font-size: 14px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
     transition: background-color var(--transition-speed);
 }
 
-.deal-item:hover {
-    background-color: #f9f9f9;
+.cancel-btn:hover {
+    background-color: #546e7a;
 }
 
-.deal-status {
-    padding: 3px 8px;
-    border-radius: 50px;
-    text-align: center;
-    display: inline-block;
-}
-
-.status-completed {
-    background-color: rgba(56, 176, 0, 0.15);
-    color: var(--success-color);
-}
-
-.status-active {
-    background-color: rgba(255, 190, 11, 0.15);
-    color: var(--warning-color);
-}
-
-.no-deals {
-    padding: 30px;
-    text-align: center;
-    color: var(--gray-color);
-    border: 1px solid var(--border-color);
+/* Error message styling */
+.error-message {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 12px;
     border-radius: var(--border-radius);
+    margin: 10px 0;
+    text-align: center;
 }
 
+/* Responsive adjustments */
 @media (max-width: 992px) {
 
     .client-item,
@@ -542,5 +528,40 @@
     .deal-date,
     .deal-status {
         display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .client-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-input {
+        margin-bottom: 15px;
+    }
+
+    .clients-list th,
+    .clients-list td {
+        padding: 12px;
+    }
+
+    .form-group {
+        margin-bottom: 12px;
+    }
+
+    .form-group label {
+        margin-bottom: 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .clients-list table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .client-form {
+        padding: 15px;
     }
 }

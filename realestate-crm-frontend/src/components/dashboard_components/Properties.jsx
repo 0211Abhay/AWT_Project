@@ -1,133 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import "../../style/Properties.css";
+import AddPropertyModel from './AddPropertyModel';
 
 const Properties = () => {
-    // Sample property data
-    const initialProperties = [
-        {
-            id: 1,
-            title: 'Modern Waterfront Villa',
-            address: '123 Ocean Drive',
-            city: 'Miami',
-            state: 'FL',
-            price: 850000,
-            type: 'residential',
-            category: 'sale',
-            bedrooms: 4,
-            bathrooms: 3,
-            area: 2500,
-            yearBuilt: 2018,
-            description: 'Luxurious waterfront villa with panoramic ocean views, private pool, and modern amenities.',
-            amenities: ['Pool', 'Garden', 'Garage', 'Security System', 'Ocean View'],
-            status: 'available',
-            featured: true,
-            images: [
-                'https://images.unsplash.com/photo-1580587771525-78b9dba3b914',
-                'https://images.unsplash.com/photo-1583608205776-bfd35f0d9f83',
-            ],
-            agent: 'John Smith',
-            createdAt: '2023-01-15'
-        },
-        {
-            id: 2,
-            title: 'Downtown Luxury Apartment',
-            address: '456 Main Street, #802',
-            city: 'New York',
-            state: 'NY',
-            price: 5000,
-            type: 'residential',
-            category: 'rent',
-            bedrooms: 2,
-            bathrooms: 2,
-            area: 1200,
-            yearBuilt: 2015,
-            description: 'Modern apartment in the heart of downtown with city views and high-end finishes.',
-            amenities: ['Gym', 'Doorman', 'Rooftop Terrace', 'Laundry', 'City View'],
-            status: 'available',
-            featured: true,
-            images: [
-                'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267',
-                'https://images.unsplash.com/photo-1560448204-603b3fc33ddc',
-            ],
-            agent: 'Jane Doe',
-            createdAt: '2023-02-20'
-        },
-        {
-            id: 3,
-            title: 'Cozy Suburban Home',
-            address: '789 Elm Street',
-            city: 'Chicago',
-            state: 'IL',
-            price: 425000,
-            type: 'residential',
-            category: 'sale',
-            bedrooms: 3,
-            bathrooms: 2,
-            area: 1800,
-            yearBuilt: 2005,
-            description: 'Charming family home in a peaceful suburban neighborhood with a spacious backyard.',
-            amenities: ['Backyard', 'Garage', 'Fireplace', 'Basement', 'Patio'],
-            status: 'available',
-            featured: false,
-            images: [
-                'https://images.unsplash.com/photo-1518780664697-55e3ad937233',
-                'https://images.unsplash.com/photo-1576941089067-2de3c901e126',
-            ],
-            agent: 'Robert Brown',
-            createdAt: '2023-03-10'
-        },
-        {
-            id: 4,
-            title: 'Commercial Office Space',
-            address: '101 Business Plaza',
-            city: 'San Francisco',
-            state: 'CA',
-            price: 750000,
-            type: 'commercial',
-            category: 'sale',
-            bedrooms: 0,
-            bathrooms: 2,
-            area: 3000,
-            yearBuilt: 2010,
-            description: 'Prime location office space with modern amenities and excellent accessibility.',
-            amenities: ['Conference Room', 'Parking', 'Security', 'Reception Area', 'High-Speed Internet'],
-            status: 'available',
-            featured: false,
-            images: [
-                'https://images.unsplash.com/photo-1497366754035-f200968a6e72',
-                'https://images.unsplash.com/photo-1497366811353-6870744d04b2',
-            ],
-            agent: 'Michael Johnson',
-            createdAt: '2023-04-05'
-        },
-        {
-            id: 5,
-            title: 'Beachfront Condominium',
-            address: '555 Shoreline Drive, #301',
-            city: 'San Diego',
-            state: 'CA',
-            price: 3500,
-            type: 'residential',
-            category: 'rent',
-            bedrooms: 3,
-            bathrooms: 2,
-            area: 1600,
-            yearBuilt: 2012,
-            description: 'Stunning beachfront condo with direct access to the beach and resort-style amenities.',
-            amenities: ['Beach Access', 'Pool', 'Fitness Center', 'Balcony', 'Gated Community'],
-            status: 'available',
-            featured: true,
-            images: [
-                'https://images.unsplash.com/photo-1523217582562-09d0def993a6',
-                'https://images.unsplash.com/photo-1484154218962-a197022b5858',
-            ],
-            agent: 'Sarah Wilson',
-            createdAt: '2023-05-12'
-        }
-    ];
-
     // State management
-    const [properties, setProperties] = useState(initialProperties);
+    const [properties, setProperties] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({
         type: 'all',
@@ -135,27 +14,157 @@ const Properties = () => {
         priceMin: '',
         priceMax: '',
         bedrooms: 'any',
-        featured: false
+        bathrooms: 'any',
+        status: 'all',
+        area_min: '',
+        area_max: '',
+        year_built_min: '',
+        year_built_max: '',
+        featured: false,
+        location: ''
     });
     const [sortOption, setSortOption] = useState('newest');
     const [viewMode, setViewMode] = useState('grid');
     const [selectedProperty, setSelectedProperty] = useState(null);
     const [isViewingDetails, setIsViewingDetails] = useState(false);
+    
+    // Add state for filter options
+    const [filterOptions, setFilterOptions] = useState({
+        propertyTypes: [],
+        propertyCategories: [],
+        bedroomOptions: [],
+        bathroomOptions: [],
+        statusOptions: [],
+        locations: []
+    });
+
+    // Add state for modals
+    const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
+    const [propertyToEdit, setPropertyToEdit] = useState(null);
+    
+    // Fetch properties from API
+    const fetchProperties = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch('http://localhost:5001/api/property/getAllProperty');
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch properties');
+            }
+
+            const data = await response.json();
+            console.log('Fetched properties:', data);
+
+            // Check if data has the expected structure
+            if (data && data.properties) {
+                setProperties(data.properties);
+                
+                // Extract unique filter options from properties
+                extractFilterOptions(data.properties);
+            } else {
+                console.error('Unexpected data structure:', data);
+                setProperties([]);
+            }
+
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching properties:', error);
+            setError(error.message);
+            setLoading(false);
+        }
+    };
+    
+    // Extract unique filter options from properties
+    const extractFilterOptions = (propertiesData) => {
+        // Extract unique property types
+        const propertyTypes = [...new Set(propertiesData.map(p => p.property_type))].filter(Boolean);
+        
+        // Extract unique property categories (property_for)
+        const propertyCategories = [...new Set(propertiesData.map(p => p.property_for))].filter(Boolean);
+        
+        // Extract unique bedroom counts and sort them
+        const bedroomOptions = [...new Set(propertiesData.map(p => p.bedrooms))]
+            .filter(Boolean)
+            .sort((a, b) => a - b);
+            
+        // Extract unique bathroom counts and sort them
+        const bathroomOptions = [...new Set(propertiesData.map(p => p.bathrooms))]
+            .filter(Boolean)
+            .sort((a, b) => a - b);
+            
+        // Extract unique status options
+        const statusOptions = [...new Set(propertiesData.map(p => p.status))].filter(Boolean);
+        
+        // Extract unique locations
+        const locations = [...new Set(propertiesData.map(p => p.location))].filter(Boolean);
+        
+        setFilterOptions({
+            propertyTypes,
+            propertyCategories,
+            bedroomOptions,
+            bathroomOptions,
+            statusOptions,
+            locations
+        });
+    };
+
+    // Fetch properties on component mount
+    useEffect(() => {
+        fetchProperties();
+    }, []);
+
+    // Open add property modal
+    const openAddPropertyModal = () => {
+        setPropertyToEdit(null); // Ensure we're not in edit mode
+        setIsAddPropertyModalOpen(true);
+    };
+
+    // Close add property modal
+    const closeAddPropertyModal = (refreshData = false) => {
+        setIsAddPropertyModalOpen(false);
+        setPropertyToEdit(null);
+        
+        // Refresh property data if requested (after successful add/edit)
+        if (refreshData) {
+            fetchProperties();
+        }
+    };
+
+    // Open edit property modal
+    const openEditPropertyModal = (property) => {
+        setPropertyToEdit(property);
+        setIsAddPropertyModalOpen(true);
+        setIsViewingDetails(false); // Close the details modal
+    };
+
+    // Format price
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(price);
+    };
 
     // Apply filters and search
     const filteredProperties = properties.filter(property => {
         // Search term filter
         const matchesSearch =
-            property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            property.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            property.description.toLowerCase().includes(searchTerm.toLowerCase());
+            property.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            property.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            property.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
         // Type filter
-        const matchesType = filters.type === 'all' || property.type === filters.type;
+        const matchesType = filters.type === 'all' || property.property_type === filters.type;
 
-        // Category filter
-        const matchesCategory = filters.category === 'all' || property.category === filters.category;
+        // Category filter - Fix case sensitivity issue
+        const matchesCategory = filters.category === 'all' || 
+            property.property_for === filters.category;
+
+        // Location filter - Add this filter
+        const matchesLocation = !filters.location || 
+            property.location === filters.location;
 
         // Price filter
         const aboveMinPrice = !filters.priceMin || property.price >= Number(filters.priceMin);
@@ -166,25 +175,50 @@ const Properties = () => {
             filters.bedrooms === 'any' ||
             (filters.bedrooms === '4+' && property.bedrooms >= 4) ||
             property.bedrooms === Number(filters.bedrooms);
+            
+        // Bathrooms filter
+        const matchesBathrooms =
+            filters.bathrooms === 'any' ||
+            (filters.bathrooms === '4+' && property.bathrooms >= 4) ||
+            property.bathrooms === Number(filters.bathrooms);
+            
+        // Status filter
+        const matchesStatus = filters.status === 'all' || property.status === filters.status;
+        
+        // Area filter
+        const aboveMinArea = !filters.area_min || property.area >= Number(filters.area_min);
+        const belowMaxArea = !filters.area_max || property.area <= Number(filters.area_max);
+        
+        // Year built filter
+        const aboveMinYear = !filters.year_built_min || property.year_built >= Number(filters.year_built_min);
+        const belowMaxYear = !filters.year_built_max || property.year_built <= Number(filters.year_built_max);
 
         // Featured filter
         const matchesFeatured = !filters.featured || property.featured;
 
-        return matchesSearch && matchesType && matchesCategory &&
-            aboveMinPrice && belowMaxPrice && matchesBedrooms && matchesFeatured;
+        return matchesSearch && matchesType && matchesCategory && matchesLocation &&
+            aboveMinPrice && belowMaxPrice && 
+            matchesBedrooms && matchesBathrooms && matchesStatus &&
+            aboveMinArea && belowMaxArea &&
+            aboveMinYear && belowMaxYear &&
+            matchesFeatured;
     });
 
     // Sort properties
     const sortedProperties = [...filteredProperties].sort((a, b) => {
         switch (sortOption) {
             case 'newest':
-                return new Date(b.createdAt) - new Date(a.createdAt);
+                return new Date(b.year_built) - new Date(a.year_built);
             case 'oldest':
-                return new Date(a.createdAt) - new Date(b.createdAt);
+                return new Date(a.year_built) - new Date(b.year_built);
             case 'priceHigh':
                 return b.price - a.price;
             case 'priceLow':
                 return a.price - b.price;
+            case 'areaHigh':
+                return b.area - a.area;
+            case 'areaLow':
+                return a.area - b.area;
             default:
                 return 0;
         }
@@ -207,7 +241,14 @@ const Properties = () => {
             priceMin: '',
             priceMax: '',
             bedrooms: 'any',
-            featured: false
+            bathrooms: 'any',
+            status: 'all',
+            area_min: '',
+            area_max: '',
+            year_built_min: '',
+            year_built_max: '',
+            featured: false,
+            location: ''
         });
         setSearchTerm('');
     };
@@ -223,19 +264,28 @@ const Properties = () => {
         setIsViewingDetails(false);
     };
 
-    // Format price
-    const formatPrice = (price, category) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            maximumFractionDigits: 0
-        }).format(price) + (category === 'rent' ? '/month' : '');
-    };
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Loading properties...</p>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (error) {
+        return (
+            <div className="error-container">
+                <p>Error: {error}</p>
+                <button onClick={fetchProperties}>Try Again</button>
+            </div>
+        );
+    }
 
     return (
         <div className="property-container">
-
-
             <div className="property-controls">
                 <div className="search-bar">
                     <input
@@ -260,7 +310,14 @@ const Properties = () => {
                     >
                         List View
                     </button>
+
                 </div>
+                <button
+                    className="add-property-btn"
+                    onClick={openAddPropertyModal}
+                >
+                    Add Property
+                </button>
             </div>
 
             <div className="property-content">
@@ -278,9 +335,11 @@ const Properties = () => {
                             onChange={handleFilterChange}
                         >
                             <option value="all">All Types</option>
-                            <option value="residential">Residential</option>
-                            <option value="commercial">Commercial</option>
-                            <option value="land">Land</option>
+                            {filterOptions.propertyTypes.map(type => (
+                                <option key={type} value={type}>
+                                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -292,8 +351,11 @@ const Properties = () => {
                             onChange={handleFilterChange}
                         >
                             <option value="all">All Categories</option>
-                            <option value="sale">For Sale</option>
-                            <option value="rent">For Rent</option>
+                            {filterOptions.propertyCategories.map(category => (
+                                <option key={category} value={category}>
+                                    For {category}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -326,10 +388,103 @@ const Properties = () => {
                             onChange={handleFilterChange}
                         >
                             <option value="any">Any</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
+                            {filterOptions.bedroomOptions.map(count => (
+                                <option key={count} value={count}>
+                                    {count}
+                                </option>
+                            ))}
                             <option value="4+">4+</option>
+                        </select>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Bathrooms</label>
+                        <select
+                            name="bathrooms"
+                            value={filters.bathrooms}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="any">Any</option>
+                            {filterOptions.bathroomOptions.map(count => (
+                                <option key={count} value={count}>
+                                    {count}
+                                </option>
+                            ))}
+                            <option value="4+">4+</option>
+                        </select>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Status</label>
+                        <select
+                            name="status"
+                            value={filters.status}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="all">All Statuses</option>
+                            {filterOptions.statusOptions.map(status => (
+                                <option key={status} value={status}>
+                                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Area (sq ft)</label>
+                        <div className="price-inputs">
+                            <input
+                                type="number"
+                                name="area_min"
+                                placeholder="Min"
+                                value={filters.area_min}
+                                onChange={handleFilterChange}
+                            />
+                            <span className="price-separator">-</span>
+                            <input
+                                type="number"
+                                name="area_max"
+                                placeholder="Max"
+                                value={filters.area_max}
+                                onChange={handleFilterChange}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Year Built</label>
+                        <div className="price-inputs">
+                            <input
+                                type="number"
+                                name="year_built_min"
+                                placeholder="From"
+                                value={filters.year_built_min}
+                                onChange={handleFilterChange}
+                            />
+                            <span className="price-separator">-</span>
+                            <input
+                                type="number"
+                                name="year_built_max"
+                                placeholder="To"
+                                value={filters.year_built_max}
+                                onChange={handleFilterChange}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="filter-group">
+                        <label>Location</label>
+                        <select
+                            name="location"
+                            value={filters.location}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="">All Locations</option>
+                            {filterOptions.locations.map(location => (
+                                <option key={location} value={location}>
+                                    {location}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
@@ -355,6 +510,8 @@ const Properties = () => {
                             <option value="oldest">Oldest First</option>
                             <option value="priceLow">Price: Low to High</option>
                             <option value="priceHigh">Price: High to Low</option>
+                            <option value="areaLow">Area: Low to High</option>
+                            <option value="areaHigh">Area: High to Low</option>
                         </select>
                     </div>
                 </aside>
@@ -371,46 +528,38 @@ const Properties = () => {
                             {sortedProperties.map(property => (
                                 <div
                                     className="property-card"
-                                    key={property.id}
+                                    key={property.property_id}
                                     onClick={() => viewPropertyDetails(property)}
                                 >
                                     <div className="property-image">
-                                        <img src={`${property.images[0]}?auto=format&fit=crop&w=600&q=80`} alt={property.title} />
-                                        {property.featured && <span className="featured-tag">Featured</span>}
-                                        <span className={`status-tag ${property.status}`}>{property.status}</span>
-                                        <span className="category-tag">{property.category === 'rent' ? 'For Rent' : 'For Sale'}</span>
+                                        {/* Using a placeholder image since we don't have actual image URLs */}
+                                        <img
+                                            src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914"
+                                            alt={property.name}
+                                        />
+                                        <span className="property-status">{property.status}</span>
+                                        <span className="property-for">{property.property_for}</span>
                                     </div>
 
                                     <div className="property-details">
-                                        <h3 className="property-title">{property.title}</h3>
-                                        <p className="property-location">
-                                            {property.address}, {property.city}, {property.state}
-                                        </p>
-                                        <p className="property-price">{formatPrice(property.price, property.category)}</p>
-
+                                        <h3 className="property-title">{property.name}</h3>
+                                        <p className="property-location">{property.location}</p>
+                                        <div className="property-price">{formatPrice(property.price)}</div>
                                         <div className="property-features">
-                                            {property.bedrooms > 0 && (
-                                                <span className="feature">
-                                                    <i className="feature-icon bed-icon"></i>
-                                                    {property.bedrooms} {property.bedrooms === 1 ? 'Bed' : 'Beds'}
-                                                </span>
-                                            )}
-
-                                            {property.bathrooms > 0 && (
-                                                <span className="feature">
-                                                    <i className="feature-icon bath-icon"></i>
-                                                    {property.bathrooms} {property.bathrooms === 1 ? 'Bath' : 'Baths'}
-                                                </span>
-                                            )}
-
                                             <span className="feature">
-                                                <i className="feature-icon area-icon"></i>
-                                                {property.area} sq ft
+                                                <i className="fas fa-bed"></i> {property.bedrooms} Beds
+                                            </span>
+                                            <span className="feature">
+                                                <i className="fas fa-bath"></i> {property.bathrooms} Baths
+                                            </span>
+                                            <span className="feature">
+                                                <i className="fas fa-ruler-combined"></i> {property.area} sq ft
                                             </span>
                                         </div>
-
-                                        <div className="property-actions">
-                                            <button className="view-details-btn">View Details</button>
+                                        <p className="property-type">{property.property_type}</p>
+                                        <div className="property-footer">
+                                            <span className="property-agent">{property.contact_agent}</span>
+                                            <span className="property-year">Built: {property.year_built}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -423,10 +572,7 @@ const Properties = () => {
                         </div>
                     )}
                 </main>
-
-
             </div>
-
 
             {isViewingDetails && selectedProperty && (
                 <div className="property-modal-overlay">
@@ -435,45 +581,40 @@ const Properties = () => {
 
                         <div className="property-modal-content">
                             <div className="property-modal-gallery">
+                                {/* Using a placeholder image since we don't have actual image URLs */}
                                 <img
-                                    src={`${selectedProperty.images[0]}?auto=format&fit=crop&w=1200&q=80`}
-                                    alt={selectedProperty.title}
+                                    src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914"
+                                    alt={selectedProperty.name}
                                     className="main-image"
                                 />
 
                                 <div className="thumbnail-gallery">
-                                    {selectedProperty.images.map((image, index) => (
-                                        <img
-                                            key={index}
-                                            src={`${image}?auto=format&fit=crop&w=200&q=80`}
-                                            alt={`${selectedProperty.title} - Image ${index + 1}`}
-                                            className="thumbnail"
-                                        />
-                                    ))}
+                                    {/* Using a placeholder image since we don't have actual image URLs */}
+                                    <img
+                                        src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914"
+                                        alt={selectedProperty.name}
+                                        className="thumbnail"
+                                    />
                                 </div>
                             </div>
 
                             <div className="property-modal-info">
                                 <div className="modal-header">
-                                    <h2>{selectedProperty.title}</h2>
-                                    <p className="modal-location">{selectedProperty.address}, {selectedProperty.city}, {selectedProperty.state}</p>
-                                    <p className="modal-price">{formatPrice(selectedProperty.price, selectedProperty.category)}</p>
+                                    <h2>{selectedProperty.name}</h2>
+                                    <p className="modal-location">{selectedProperty.location}</p>
+                                    <p className="modal-price">{formatPrice(selectedProperty.price)}</p>
                                 </div>
 
                                 <div className="modal-features">
-                                    {selectedProperty.bedrooms > 0 && (
-                                        <div className="modal-feature">
-                                            <span className="feature-label">Bedrooms</span>
-                                            <span className="feature-value">{selectedProperty.bedrooms}</span>
-                                        </div>
-                                    )}
+                                    <div className="modal-feature">
+                                        <span className="feature-label">Bedrooms</span>
+                                        <span className="feature-value">{selectedProperty.bedrooms}</span>
+                                    </div>
 
-                                    {selectedProperty.bathrooms > 0 && (
-                                        <div className="modal-feature">
-                                            <span className="feature-label">Bathrooms</span>
-                                            <span className="feature-value">{selectedProperty.bathrooms}</span>
-                                        </div>
-                                    )}
+                                    <div className="modal-feature">
+                                        <span className="feature-label">Bathrooms</span>
+                                        <span className="feature-value">{selectedProperty.bathrooms}</span>
+                                    </div>
 
                                     <div className="modal-feature">
                                         <span className="feature-label">Area</span>
@@ -482,13 +623,13 @@ const Properties = () => {
 
                                     <div className="modal-feature">
                                         <span className="feature-label">Year Built</span>
-                                        <span className="feature-value">{selectedProperty.yearBuilt}</span>
+                                        <span className="feature-value">{selectedProperty.year_built}</span>
                                     </div>
 
                                     <div className="modal-feature">
                                         <span className="feature-label">Property Type</span>
                                         <span className="feature-value">
-                                            {selectedProperty.type.charAt(0).toUpperCase() + selectedProperty.type.slice(1)}
+                                            {selectedProperty.property_type.charAt(0).toUpperCase() + selectedProperty.property_type.slice(1)}
                                         </span>
                                     </div>
 
@@ -508,26 +649,65 @@ const Properties = () => {
                                 <div className="modal-amenities">
                                     <h3>Amenities</h3>
                                     <ul className="amenities-list">
-                                        {selectedProperty.amenities.map((amenity, index) => (
-                                            <li key={index} className="amenity-item">{amenity}</li>
-                                        ))}
+                                        {selectedProperty.amenities ? (
+                                            (() => {
+                                                let amenitiesArray;
+                                                try {
+                                                    // If it's already an array, use it directly
+                                                    if (Array.isArray(selectedProperty.amenities)) {
+                                                        amenitiesArray = selectedProperty.amenities;
+                                                    } else {
+                                                        // Otherwise try to parse it as JSON
+                                                        amenitiesArray = JSON.parse(selectedProperty.amenities);
+                                                        // Ensure the parsed result is an array
+                                                        if (!Array.isArray(amenitiesArray)) {
+                                                            amenitiesArray = [amenitiesArray];
+                                                        }
+                                                    }
+                                                    return amenitiesArray.map((amenity) => (
+                                                        <li key={amenity} className="amenity-item">{amenity}</li>
+                                                    ));
+                                                } catch (error) {
+                                                    console.error("Error parsing amenities:", error);
+                                                    return <li className="amenity-item">Error displaying amenities</li>;
+                                                }
+                                            })()
+                                        ) : (
+                                            <li className="amenity-item">No amenities listed</li>
+                                        )}
                                     </ul>
                                 </div>
 
                                 <div className="modal-agent">
                                     <h3>Listed By</h3>
-                                    <p>{selectedProperty.agent}</p>
+                                    <p>{selectedProperty.contact_agent}</p>
                                 </div>
 
                                 <div className="modal-actions">
                                     <button className="contact-agent-btn">Contact Agent</button>
                                     <button className="schedule-viewing-btn">Schedule Viewing</button>
+                                    <button 
+                                        className="edit-property-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Prevent closing the modal
+                                            openEditPropertyModal(selectedProperty);
+                                        }}
+                                    >
+                                        Edit Property
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Add/Edit Property Modal */}
+            <AddPropertyModel
+                isOpen={isAddPropertyModalOpen}
+                onClose={closeAddPropertyModal}
+                propertyToEdit={propertyToEdit}
+            />
         </div>
     );
 };
