@@ -4,6 +4,7 @@ import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import withSessionCheck from '../components/SessionCheck';
 import "../style/Login.css";
+import GoogleLoginButton from '../components/GoogleLoginButton';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -76,7 +77,7 @@ const Login = () => {
                         Sign in to Broker Dashboard
                     </button>
                 </form>
-
+                <GoogleLoginButton/>
                 <div className="auth-footer">
                     <p>
                         Don't have a broker account?{' '}
