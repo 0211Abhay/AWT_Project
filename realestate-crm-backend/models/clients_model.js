@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
-const Broker = require('./broker');
+const Broker = require('./Broker');
 
 const Client = sequelize.define('Client', {
     clientId: {
