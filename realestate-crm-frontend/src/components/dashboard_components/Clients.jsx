@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
 import "../../style/Clients.css"
 
 const Client = () => {
@@ -9,6 +11,12 @@ const Client = () => {
     const [isEditingClient, setIsEditingClient] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [selectedClient, setSelectedClient] = useState(null);
+    const [clientSchedules, setClientSchedules] = useState([]);
+    const [clientProperties, setClientProperties] = useState([]);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [loadingDetails, setLoadingDetails] = useState(false);
+    const [errorDetails, setErrorDetails] = useState(null);
     const [currentClient, setCurrentClient] = useState({
         id: null,
         name: '',
@@ -21,6 +29,53 @@ const Client = () => {
         fetchClients();
     }, []);
 
+
+    const fetchClientDetails = async (clientId) => {
+        setLoadingDetails(true);
+        try {
+            console.log('Fetching client details for client ID:', clientId);
+
+            // Fetch schedules
+            const schedulesRes = await fetch(`http://localhost:5001/api/schedule/client/${clientId}`);
+            if (!schedulesRes.ok) {
+                const errorData = await schedulesRes.json();
+                throw new Error(errorData.details || 'Failed to fetch schedules');
+            }
+            const schedulesData = await schedulesRes.json();
+            console.log('Fetched schedules:', schedulesData);
+
+            setClientSchedules(schedulesData);
+
+            // Fetch property for the first schedule
+            if (schedulesData.length > 0 && schedulesData[0].property_id) {
+                const propertyId = schedulesData[0].property_id;
+                console.log('Fetching property with ID:', propertyId);
+
+                const propertyRes = await fetch(`http://localhost:5001/api/property/getOneProperty/${propertyId}`);
+                if (!propertyRes.ok) {
+                    const errorData = await propertyRes.json();
+                    throw new Error(errorData.details || 'Failed to fetch property');
+                }
+                const propertyData = await propertyRes.json();
+                console.log('Fetched property data:', propertyData);
+            } else {
+                console.log('No schedules or no property_id found.');
+            }
+
+        } catch (error) {
+            console.error('Error fetching client details:', error);
+            setErrorDetails(error.message);
+        } finally {
+            setLoadingDetails(false);
+        }
+    };
+
+
+    const handleViewDetails = async (client) => {
+        setSelectedClient(client);
+        setIsProfileModalOpen(true);
+        await fetchClientDetails(client.id);
+    };
     const fetchClients = async () => {
         setLoading(true);
         try {
@@ -155,8 +210,8 @@ const Client = () => {
 
     const filteredClients = (clients || []).filter(client => {
         return client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               client.phone.includes(searchTerm);
+            client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            client.phone.includes(searchTerm);
     });
 
     return (
@@ -171,7 +226,7 @@ const Client = () => {
                         className="search-input"
                     />
                 </div>
-                <button 
+                <button
                     onClick={() => setIsAddingClient(true)}
                     className="add-client-btn"
                 >
@@ -229,15 +284,15 @@ const Client = () => {
                             />
                         </div>
                         <div className="form-buttons">
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onClick={isAddingClient ? addClient : updateClient}
                                 className="submit-btn"
                             >
                                 {isAddingClient ? 'Add Client' : 'Update Client'}
                             </button>
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 onClick={cancelForm}
                                 className="cancel-btn"
                             >
@@ -268,23 +323,93 @@ const Client = () => {
                                     <td>{client.address}</td>
                                     <td>{new Date(client.joinDate).toLocaleDateString()}</td>
                                     <td>
-                                        <button 
+                                        <button
                                             onClick={() => editClient(client)}
                                             className="edit-btn"
                                         >
                                             Edit
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={() => deleteClient(client.id)}
                                             className="delete-btn"
                                         >
                                             Delete
+                                        </button>
+                                        <button
+                                            onClick={() => handleViewDetails(client)}
+                                            className="view-btn"
+                                        >
+                                            View Details
                                         </button>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+            {isProfileModalOpen && selectedClient && (
+                <div className="client-profile-modal-overlay">
+                    <div className="client-profile-modal">
+                        <button
+                            className="modal-close-btn"
+                            onClick={() => setIsProfileModalOpen(false)}
+                        >
+                            &times;
+                        </button>
+
+                        <h2 className="modal-title">{selectedClient.name}'s Profile</h2>
+
+                        {loadingDetails ? (
+                            <div className="loading-indicator">Loading details...</div>
+                        ) : errorDetails ? (
+                            <div className="error-message">{errorDetails}</div>
+                        ) : (
+                            <>
+                                <div className="client-info-section">
+                                    <div className="info-item">
+                                        <label>Email:</label>
+                                        <p>{selectedClient.email}</p>
+                                    </div>
+                                    <div className="info-item">
+                                        <label>Phone:</label>
+                                        <p>{selectedClient.phone}</p>
+                                    </div>
+                                    <div className="info-item">
+                                        <label>Address:</label>
+                                        <p>{selectedClient.address || 'Not available'}</p>
+                                    </div>
+                                </div>
+                                <div className="schedules-section">
+                                    <h3>Scheduled Visits</h3>
+                                    {clientSchedules.length > 0 ? (
+                                        <div className="schedule-table">
+                                            <div className="schedule-header" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', fontWeight: 'bold' }}>
+                                                <span>Property</span>
+                                                <span>Location</span>
+                                                <span>Date</span>
+                                                <span>Time</span>
+                                                <span>Status</span>
+                                            </div>
+                                            {clientSchedules.map(schedule => (
+                                                <div key={schedule.schedule_id} className="schedule-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr', alignItems: 'center' }}>
+                                                    <span>{schedule.property?.name || 'Property Name Unavailable'}</span>
+                                                    <span>{schedule.property?.location || 'Location Unavailable'}</span>
+                                                    <span>{new Date(schedule.date).toLocaleDateString()}</span>
+                                                    <span>{schedule.time}</span>
+                                                    <span className={`status-${schedule.status.toLowerCase()}`}>
+                                                        {schedule.status}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="no-data">No scheduled visits found</p>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
