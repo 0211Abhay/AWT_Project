@@ -4,6 +4,7 @@ const cors = require('cors');
 const { Sequelize } = require('sequelize');
 const sessionMiddleware = require('./config/session');
 const authRoutes = require('./routes/auth');
+const rentalRoutes = require('./routes/rental_routes');
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use(sessionMiddleware);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/rental', rentalRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

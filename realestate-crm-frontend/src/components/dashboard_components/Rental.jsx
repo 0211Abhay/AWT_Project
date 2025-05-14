@@ -1,36 +1,296 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle, XCircle, Upload, FileText, Search, Bell, DollarSign, Clock, AlertTriangle } from 'lucide-react';
+import axios from 'axios';
+// import { toast } from 'react-toastify'; // Commented out since it's not properly configured
 import "../../style/Rental.css";
 const Rental = () => {
     const [activeTab, setActiveTab] = useState('payments');
     const [filterStatus, setFilterStatus] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedProperty, setSelectedProperty] = useState(null);
+    const [showRentalModal, setShowRentalModal] = useState(false);
 
-    // Sample data
-    const rentals = [
-        { id: 1, property: "Oceanview Apartment", tenant: "James Wilson", dueDate: "2023-11-05", amount: 1850, status: "paid", paymentDate: "2023-11-03", method: "Bank Transfer" },
-        { id: 2, property: "Downtown Loft", tenant: "Emily Rodriguez", dueDate: "2023-11-10", amount: 2100, status: "due", paymentDate: "", method: "" },
-        { id: 3, property: "Sunset Villa", tenant: "Michael Chen", dueDate: "2023-10-28", amount: 3200, status: "overdue", paymentDate: "", method: "" },
-        { id: 4, property: "Parkside Condo", tenant: "Sarah Johnson", dueDate: "2023-11-15", amount: 1950, status: "paid", paymentDate: "2023-11-01", method: "Credit Card" },
-        { id: 5, property: "Riverside House", tenant: "David Kim", dueDate: "2023-11-20", amount: 2800, status: "due", paymentDate: "", method: "" },
-    ];
+    // State for broker data
+    const [currentBrokerId, setCurrentBrokerId] = useState(null);
+    const [properties, setProperties] = useState([]);
+    const [clients, setClients] = useState([]);
+    const [loadingData, setLoadingData] = useState(false);
 
-    const leases = [
-        { id: 1, property: "Oceanview Apartment", tenant: "James Wilson", startDate: "2023-01-10", endDate: "2023-12-10", status: "expiring-soon" },
-        { id: 2, property: "Downtown Loft", tenant: "Emily Rodriguez", startDate: "2023-03-15", endDate: "2024-03-15", status: "active" },
-        { id: 3, property: "Sunset Villa", tenant: "Michael Chen", startDate: "2022-10-28", endDate: "2023-10-28", status: "expired" },
-        { id: 4, property: "Parkside Condo", tenant: "Sarah Johnson", startDate: "2023-05-20", endDate: "2024-05-20", status: "active" },
-        { id: 5, property: "Riverside House", tenant: "David Kim", startDate: "2023-06-01", endDate: "2024-06-01", status: "active" },
-    ];
+    // State for notification preferences
+    const [notificationPrefs, setNotificationPrefs] = useState({
+        emailNotification: true,
+        smsNotification: false,
+        calendarReminder: true,
+        documentReminder: true,
+        paymentReminder: true,
+        leaseReminder: false
+    });
 
-    const documents = [
-        { id: 1, name: "Lease_Oceanview_Wilson.pdf", property: "Oceanview Apartment", type: "Lease Agreement", uploadDate: "2023-01-10" },
-        { id: 2, name: "ID_Emily_Rodriguez.pdf", property: "Downtown Loft", type: "Tenant ID", uploadDate: "2023-03-15" },
-        { id: 3, name: "Payment_Receipt_Oct_Chen.pdf", property: "Sunset Villa", type: "Payment Receipt", uploadDate: "2023-10-05" },
-        { id: 4, name: "Insurance_Parkside_Johnson.pdf", property: "Parkside Condo", type: "Insurance", uploadDate: "2023-05-25" },
-        { id: 5, name: "Inspection_Riverside_2023.pdf", property: "Riverside House", type: "Property Inspection", uploadDate: "2023-07-12" },
-    ];
+    // Function to handle checkbox changes
+    const handleCheckboxChange = (prefName) => {
+        setNotificationPrefs(prev => ({
+            ...prev,
+            [prefName]: !prev[prefName]
+        }));
+    };
+
+    const [newRental, setNewRental] = useState({
+        broker_id: 1, // Will be updated with current broker ID
+        client_id: '',
+        property_id: '',
+        start_date: '',
+        end_date: '',
+        rent_amount: '',
+        status: 'Active',
+        notes: ''
+    });
+
+    // Get current broker ID from localStorage on component mount
+    useEffect(() => {
+        try {
+            // Get broker info from localStorage
+            const brokerInfo = JSON.parse(localStorage.getItem('brokerInfo')) || {};
+            const brokerId = brokerInfo.brokerId || '2'; // Default to broker ID 2 if not found
+            console.log('Current broker ID:', brokerId);
+
+            setCurrentBrokerId(brokerId);
+            setNewRental(prev => ({
+                ...prev,
+                broker_id: brokerId
+            }));
+        } catch (error) {
+            console.error('Error getting broker info from localStorage:', error);
+            // Fallback to broker ID 2
+            setCurrentBrokerId('2');
+            setNewRental(prev => ({
+                ...prev,
+                broker_id: '2'
+            }));
+        }
+    }, []);
+
+    // Fetch properties and clients when modal is opened
+    useEffect(() => {
+        if (showRentalModal && currentBrokerId) {
+            fetchPropertiesAndClients();
+        }
+    }, [showRentalModal, currentBrokerId]);
+
+    // Function to fetch properties and clients for the current broker
+    const fetchPropertiesAndClients = async () => {
+        if (!currentBrokerId) return;
+
+        setLoadingData(true);
+        try {
+            // Fetch properties for this broker
+            let propertiesData = [];
+            try {
+                const propertiesResponse = await axios.get(`http://localhost:5001/api/property/getPropertiesByBroker/${currentBrokerId}`);
+                if (propertiesResponse.data) {
+                    propertiesData = propertiesResponse.data.properties || [];
+                    console.log('Broker properties:', propertiesData);
+                }
+            } catch (propError) {
+                console.error('Error fetching broker properties:', propError);
+            }
+
+            // If no properties found for this broker, fetch all properties as fallback
+            if (!propertiesData || propertiesData.length === 0) {
+                try {
+                    const allPropertiesResponse = await axios.get('http://localhost:5001/api/property/getAllProperty');
+                    if (allPropertiesResponse.data && allPropertiesResponse.data.properties) {
+                        // Filter properties by broker_id if possible, otherwise show all
+                        propertiesData = allPropertiesResponse.data.properties.filter(property =>
+                            !currentBrokerId || property.broker_id.toString() === currentBrokerId.toString()
+                        );
+                        console.log('All properties filtered for broker:', propertiesData);
+                    }
+                } catch (allPropError) {
+                    console.error('Error fetching all properties:', allPropError);
+                }
+            }
+
+            setProperties(propertiesData || []);
+
+            // Similar approach for clients
+            let clientsData = [];
+            try {
+                // Use axios for consistent API calls and POST request for getClientsByBroker
+                const clientsResponse = await axios.post('http://localhost:5001/api/client/getClientsByBroker', {
+                    broker_id: currentBrokerId
+                });
+
+                if (clientsResponse.data) {
+                    clientsData = clientsResponse.data;
+                    console.log('Broker clients:', clientsData);
+                }
+            } catch (clientError) {
+                console.error('Error fetching broker clients:', clientError);
+            }
+
+            // If no clients found for this broker, fetch all clients as fallback
+            if (!clientsData || clientsData.length === 0) {
+                try {
+                    const allClientsResponse = await axios.get('http://localhost:5001/api/client/getAllClient');
+                    if (allClientsResponse.data) {
+                        // Filter clients by broker_id if possible, otherwise show all
+                        clientsData = allClientsResponse.data.filter(client =>
+                            !currentBrokerId || client.broker_id.toString() === currentBrokerId.toString()
+                        );
+                        console.log('All clients filtered for broker:', clientsData);
+                    }
+                } catch (allClientError) {
+                    console.error('Error fetching all clients:', allClientError);
+                }
+            }
+
+            setClients(clientsData || []);
+
+        } catch (error) {
+            console.error('Error in fetchPropertiesAndClients:', error);
+            // Show error state instead of using mock data
+            setProperties([]);
+            setClients([]);
+            // Display an error message to the user
+            alert('Failed to load properties and clients. Please try again later.');
+            // You could also set an error state here if you want to show a specific error UI
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    // State for rental data
+    const [rentals, setRentals] = useState([]);
+    const [leases, setLeases] = useState([]);
+    const [documents, setDocuments] = useState([]);
+
+    // Helper function to map rental status to payment status
+    const mapRentalStatusToPaymentStatus = (rentalStatus) => {
+        switch (rentalStatus) {
+            case 'Active':
+                return 'Pending';
+            case 'Completed':
+                return 'Paid';
+            case 'Terminated':
+                return 'Overdue';
+            default:
+                return 'Unknown';
+        }
+    };
+
+    // Helper function to determine lease status based on end date and rental status
+    const getLeaseStatus = (endDate, rentalStatus) => {
+        if (rentalStatus === 'Terminated') {
+            return 'Terminated';
+        }
+
+        const today = new Date();
+        const leaseEndDate = new Date(endDate);
+
+        if (leaseEndDate < today) {
+            return 'Expired';
+        } else if (rentalStatus === 'Completed') {
+            return 'Completed';
+        } else {
+            // Calculate days remaining
+            const daysRemaining = Math.ceil((leaseEndDate - today) / (1000 * 60 * 60 * 24));
+
+            if (daysRemaining <= 30) {
+                return 'Expiring Soon';
+            } else {
+                return 'Active';
+            }
+        }
+    };
+
+    // Function to fetch documents (using mock data since API endpoint doesn't exist yet)
+    const fetchDocuments = async () => {
+        try {
+            setLoadingData(true);
+
+            // Get broker ID from localStorage
+            const currentBrokerId = localStorage.getItem('brokerId');
+
+            // Use mock data for now since the API endpoint doesn't exist
+            // This will be replaced with a real API call once the endpoint is implemented
+            const mockDocuments = [
+                { id: 1, name: 'Lease Agreement Template', type: 'PDF', date: '2023-10-15', size: '245 KB' },
+                { id: 2, name: 'Rental Application Form', type: 'DOCX', date: '2023-09-22', size: '180 KB' },
+                { id: 3, name: 'Property Inspection Checklist', type: 'PDF', date: '2023-11-05', size: '320 KB' }
+            ];
+
+            // Filter by broker ID if needed
+            const filteredDocuments = currentBrokerId
+                ? mockDocuments.filter(doc => doc.broker_id === parseInt(currentBrokerId) || !doc.broker_id)
+                : mockDocuments;
+
+            setDocuments(filteredDocuments);
+            console.log('Using mock documents data:', filteredDocuments);
+        } catch (error) {
+            console.error('Error in document handling:', error);
+            setDocuments([]);
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    // Fetch rentals and documents on component mount
+    useEffect(() => {
+        fetchRentals();
+        fetchDocuments();
+    }, []);
+
+    // Function to fetch rentals from the backend
+    const fetchRentals = async () => {
+        try {
+            setLoadingData(true);
+            // Get broker ID from localStorage
+            const currentBrokerId = localStorage.getItem('brokerId');
+
+            // Fetch rentals from the API using the broker-specific endpoint
+            const response = await axios.get(`http://localhost:5001/api/rental/getRentalsByBroker/${currentBrokerId}`);
+
+            if (response.data && response.data.rentals) {
+                const formattedRentals = response.data.rentals.map(rental => ({
+                    id: rental.rental_id,
+                    property: rental.property ? rental.property.name : 'Unknown Property',
+                    tenant: rental.client ? `${rental.client.first_name} ${rental.client.last_name}` : 'Unknown Client',
+                    dueDate: rental.end_date,
+                    amount: parseFloat(rental.rent_amount),
+                    status: mapRentalStatusToPaymentStatus(rental.status),
+                    paymentDate: rental.status === 'Completed' ? rental.updated_at : '',
+                    method: rental.status === 'Completed' ? 'Bank Transfer' : '',
+                    property_id: rental.property_id,
+                    client_id: rental.client_id,
+                    start_date: rental.start_date,
+                    end_date: rental.end_date
+                }));
+                setRentals(formattedRentals);
+
+                const formattedLeases = response.data.rentals.map(rental => ({
+                    id: rental.rental_id,
+                    property: rental.property ? rental.property.name : 'Unknown Property',
+                    tenant: rental.client ? `${rental.client.first_name} ${rental.client.last_name}` : 'Unknown Client',
+                    startDate: rental.start_date,
+                    endDate: rental.end_date,
+                    status: getLeaseStatus(rental.end_date, rental.status)
+                }));
+                setLeases(formattedLeases);
+            } else {
+                setRentals([]);
+                setLeases([]);
+            }
+        } catch (error) {
+            console.error('Error fetching rentals:', error);
+            setRentals([]);
+            setLeases([]);
+            alert('Failed to load rentals. Please try again later.');
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    // This getLeaseStatus function is now defined earlier in the component
 
     // Filter rentals based on status and search query
     const filteredRentals = rentals.filter(rental => {
@@ -59,14 +319,133 @@ const Rental = () => {
         return new Date(dateString).toLocaleDateString(undefined, options);
     };
 
+    // Function to handle adding a new rental
+    const handleAddRental = async () => {
+        try {
+            // Validate form
+            if (!newRental.client_id || !newRental.property_id || !newRental.start_date ||
+                !newRental.end_date || !newRental.rent_amount) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            // Get client and property details for display - handle different API data structures
+            const selectedClient = clients.find(c => {
+                const clientId = c.client_id || c.id;
+                return clientId && clientId.toString() === newRental.client_id.toString();
+            });
+
+            const selectedProperty = properties.find(p => {
+                const propertyId = p.property_id || p.id;
+                return propertyId && propertyId.toString() === newRental.property_id.toString();
+            });
+
+            if (!selectedClient || !selectedProperty) {
+                alert('Invalid client or property selection');
+                return;
+            }
+
+            // Prepare data for API request
+            const rentalData = {
+                broker_id: parseInt(newRental.broker_id),
+                client_id: parseInt(newRental.client_id),
+                property_id: parseInt(newRental.property_id),
+                start_date: newRental.start_date,
+                end_date: newRental.end_date,
+                rent_amount: parseFloat(newRental.rent_amount),
+                status: newRental.status,
+                notes: newRental.notes
+            };
+
+            // Show loading state
+            setLoadingData(true);
+
+            // Send data to the backend API
+            const response = await axios.post('http://localhost:5001/api/rental/createRental', rentalData);
+
+            // If successful, refresh the rentals data to show the new entry
+            if (response.data && response.data.rental) {
+                // Fetch updated rental data to ensure we have the latest information
+                await fetchRentals();
+
+                // Reset form and close modal
+                setNewRental({
+                    broker_id: currentBrokerId,
+                    client_id: '',
+                    property_id: '',
+                    start_date: '',
+                    end_date: '',
+                    rent_amount: '',
+                    status: 'Active',
+                    notes: ''
+                });
+
+                setShowRentalModal(false);
+
+                // Show success message
+                alert('Rental agreement added successfully!');
+            }
+        } catch (error) {
+            console.error('Error adding rental:', error);
+            alert('Failed to add rental agreement: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
     const handleMarkAsPaid = (id) => {
-        console.log(`Marking rental ${id} as paid`);
-        // In a real app, update the state or call an API
+        // Update the rental status to paid
+        setRentals(prevRentals =>
+            prevRentals.map(rental =>
+                rental.id === id
+                    ? { ...rental, status: 'paid', paymentDate: new Date().toISOString().split('T')[0], method: 'Bank Transfer' }
+                    : rental
+            )
+        );
+
+        // Also update the lease status
+        setLeases(prevLeases =>
+            prevLeases.map(lease =>
+                lease.id === id
+                    ? { ...lease, status: 'expired' }
+                    : lease
+            )
+        );
+
+        // In a real app, you would call an API to update the status
+        // axios.patch(`/api/rental/changeRentalStatus/${id}`, { status: 'Completed' });
+
+        alert('Rental marked as paid successfully!');
     };
 
     const handleUploadDocument = () => {
-        console.log('Upload document clicked');
-        // In a real app, open a file upload dialog
+        // Create a file input element
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.pdf,.doc,.docx';
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Create a new document entry
+            const newDocId = documents.length > 0 ? Math.max(...documents.map(d => d.id)) + 1 : 1;
+            const newDocument = {
+                id: newDocId,
+                name: file.name,
+                property: selectedProperty || 'General',
+                type: file.name.toLowerCase().includes('lease') ? 'Lease Agreement' :
+                    file.name.toLowerCase().includes('id') ? 'Tenant ID' : 'Document',
+                uploadDate: new Date().toISOString().split('T')[0]
+            };
+
+            // Add to documents state
+            setDocuments(prevDocs => [newDocument, ...prevDocs]);
+
+            alert('Document uploaded successfully!');
+        };
+
+        fileInput.click();
     };
 
     const handlePropertySelect = (property) => {
@@ -106,8 +485,8 @@ const Rental = () => {
                     {/* <p>Efficiently manage your rental properties, tenants, and payments</p> */}
                 </div>
                 <div className="action-buttons">
-                    <button className="btn btn-primary">
-                        <span>Add New Tenant</span>
+                    <button className="btn btn-primary" onClick={() => setShowRentalModal(true)}>
+                        <span>Add New Rental</span>
                     </button>
                     <button className="btn btn-secondary" onClick={handleUploadDocument}>
                         <Upload size={16} />
@@ -465,14 +844,14 @@ const Rental = () => {
                                     <div className="reminder-toggle">
                                         <span>Email Notification</span>
                                         <label className="switch">
-                                            <input type="checkbox" checked={true} />
+                                            <input type="checkbox" defaultChecked={true} />
                                             <span className="slider"></span>
                                         </label>
                                     </div>
                                     <div className="reminder-toggle">
                                         <span>SMS Notification</span>
                                         <label className="switch">
-                                            <input type="checkbox" />
+                                            <input type="checkbox" defaultChecked={false} />
                                             <span className="slider"></span>
                                         </label>
                                     </div>
@@ -501,14 +880,14 @@ const Rental = () => {
                                     <div className="reminder-toggle">
                                         <span>Email Notification</span>
                                         <label className="switch">
-                                            <input type="checkbox" checked={true} />
+                                            <input type="checkbox" defaultChecked={true} />
                                             <span className="slider"></span>
                                         </label>
                                     </div>
                                     <div className="reminder-toggle">
                                         <span>SMS Notification</span>
                                         <label className="switch">
-                                            <input type="checkbox" checked={true} />
+                                            <input type="checkbox" defaultChecked={true} />
                                             <span className="slider"></span>
                                         </label>
                                     </div>
@@ -537,14 +916,14 @@ const Rental = () => {
                                     <div className="reminder-toggle">
                                         <span>Email Notification</span>
                                         <label className="switch">
-                                            <input type="checkbox" checked={true} />
+                                            <input type="checkbox" defaultChecked={true} />
                                             <span className="slider"></span>
                                         </label>
                                     </div>
                                     <div className="reminder-toggle">
                                         <span>SMS Notification</span>
                                         <label className="switch">
-                                            <input type="checkbox" />
+                                            <input type="checkbox" defaultChecked={false} />
                                             <span className="slider"></span>
                                         </label>
                                     </div>
@@ -562,6 +941,122 @@ const Rental = () => {
                     </div>
                 )}
             </div>
+            {/* Add New Rental Modal */}
+            {showRentalModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h2>Add New Rental Agreement</h2>
+                            <button className="close-btn" onClick={() => setShowRentalModal(false)}>&times;</button>
+                        </div>
+                        <div className="modal-body">
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                // Create a new rental
+                                handleAddRental();
+                            }}>
+                                <div className="form-group">
+                                    <label htmlFor="client-id">Client</label>
+                                    {loadingData ? (
+                                        <div className="loading-text">Loading clients...</div>
+                                    ) : (
+                                        <select
+                                            id="client-id"
+                                            value={newRental.client_id}
+                                            onChange={(e) => setNewRental({ ...newRental, client_id: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Select Client</option>
+                                            {clients.map(client => (
+                                                <option key={client.client_id || client.id} value={client.client_id || client.id}>
+                                                    {client.name || client.client_name || `Client #${client.client_id || client.id}`}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="property-id">Property</label>
+                                    {loadingData ? (
+                                        <div className="loading-text">Loading properties...</div>
+                                    ) : (
+                                        <select
+                                            id="property-id"
+                                            value={newRental.property_id}
+                                            onChange={(e) => setNewRental({ ...newRental, property_id: e.target.value })}
+                                            required
+                                        >
+                                            <option value="">Select Property</option>
+                                            {properties.map(property => (
+                                                <option key={property.property_id || property.id} value={property.property_id || property.id}>
+                                                    {property.name || property.property_name || `Property #${property.property_id || property.id}`}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="start-date">Start Date</label>
+                                    <input
+                                        type="date"
+                                        id="start-date"
+                                        value={newRental.start_date}
+                                        onChange={(e) => setNewRental({ ...newRental, start_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="end-date">End Date</label>
+                                    <input
+                                        type="date"
+                                        id="end-date"
+                                        value={newRental.end_date}
+                                        onChange={(e) => setNewRental({ ...newRental, end_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="rent-amount">Rent Amount</label>
+                                    <input
+                                        type="number"
+                                        id="rent-amount"
+                                        value={newRental.rent_amount}
+                                        onChange={(e) => setNewRental({ ...newRental, rent_amount: e.target.value })}
+                                        required
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="status">Status</label>
+                                    <select
+                                        id="status"
+                                        value={newRental.status}
+                                        onChange={(e) => setNewRental({ ...newRental, status: e.target.value })}
+                                    >
+                                        <option value="Active">Active</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Terminated">Terminated</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="notes">Notes</label>
+                                    <textarea
+                                        id="notes"
+                                        value={newRental.notes}
+                                        onChange={(e) => setNewRental({ ...newRental, notes: e.target.value })}
+                                        rows="3"
+                                    ></textarea>
+                                </div>
+                                <div className="modal-footer">
+                                    <button type="button" className="btn btn-secondary" onClick={() => setShowRentalModal(false)}>Cancel</button>
+                                    <button type="submit" className="btn btn-primary">Add Rental</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -119,7 +119,7 @@ const Client = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    broker_id: 1,
+                    broker_id: localStorage.getItem('brokerId'),
                     ...currentClient
                 })
             });

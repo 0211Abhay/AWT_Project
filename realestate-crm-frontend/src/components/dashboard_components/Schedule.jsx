@@ -48,50 +48,89 @@ const Schedule = () => {
                 const clientsResponse = await axios.get('http://localhost:5001/api/client/getAllClient');
                 console.log('Fetched clients:', clientsResponse.data);
 
-                // Use broker_id = 1 as the default
-                const currentBrokerId = 1;
+                // Get broker ID from localStorage
+                const currentBrokerId = localStorage.getItem('brokerId');
+                console.log('Current broker ID from localStorage:', currentBrokerId);
 
                 // Transform schedule data to match the component's expected format
-                const formattedSchedules = schedulesResponse.data.map(schedule => ({
-                    id: schedule.schedule_id,
-                    property: schedule.property ? schedule.property.name : 'Unknown Property',
-                    property_id: schedule.property_id,
-                    client: schedule.client ? `${schedule.client.first_name} ${schedule.client.last_name}` : 'Unknown Client',
-                    client_id: schedule.client_id,
-                    broker_id: schedule.broker_id,
-                    broker: schedule.broker ? `${schedule.broker.first_name} ${schedule.broker.last_name}` : 'Unknown Broker',
-                    date: new Date(schedule.date).toISOString().split('T')[0],
-                    time: new Date(schedule.date + ' ' + schedule.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    status: schedule.status.toLowerCase(),
-                    contactNumber: schedule.client ? schedule.client.phone : '',
-                    email: schedule.client ? schedule.client.email : '',
-                    notes: schedule.description || ''
-                }));
+                const formattedSchedules = schedulesResponse.data.map(schedule => {
+                    // Format the date and time properly
+                    let formattedTime = 'No time';
+                    try {
+                        if (schedule.time) {
+                            // Parse time directly without combining with date
+                            const timeParts = schedule.time.split(':');
+                            if (timeParts.length >= 2) {
+                                const hours = parseInt(timeParts[0]);
+                                const minutes = parseInt(timeParts[1]);
+                                const timeObj = new Date();
+                                timeObj.setHours(hours, minutes, 0);
+                                formattedTime = timeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error formatting time:', error, schedule.time);
+                    }
 
-                // Get properties from the correct data structure and filter by broker_id = 1
+                    // Format the date properly
+                    let formattedDate = 'Unknown Date';
+                    try {
+                        if (schedule.date) {
+                            const dateObj = new Date(schedule.date);
+                            if (!isNaN(dateObj.getTime())) {
+                                formattedDate = dateObj.toISOString().split('T')[0];
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error formatting date:', error, schedule.date);
+                    }
+
+                    // Format client name
+                    const clientName = schedule.client
+                        ? `${schedule.client.first_name || ''} ${schedule.client.last_name || ''}`.trim()
+                        : 'Unknown Client';
+
+                    return {
+                        id: schedule.schedule_id,
+                        property: schedule.property ? schedule.property.name : 'Unknown Property',
+                        property_id: schedule.property_id,
+                        client: clientName,
+                        client_id: schedule.client_id,
+                        client_name: '', // Initialize client_name field
+                        broker_id: schedule.broker_id,
+                        broker: schedule.broker ? `${schedule.broker.first_name || ''} ${schedule.broker.last_name || ''}`.trim() : 'Unknown Broker',
+                        date: formattedDate,
+                        time: formattedTime,
+                        status: schedule.status.toLowerCase(),
+                        contactNumber: schedule.client ? schedule.client.phone : '',
+                        email: schedule.client ? schedule.client.email : '',
+                        notes: schedule.description || ''
+                    };
+                });
+
+                // Get properties from the correct data structure and filter by broker_id from localStorage
                 // Based on the console log, properties are in propertiesResponse.data.properties
                 const properties = propertiesResponse.data.properties || [];
                 console.log('Properties array:', properties);
 
                 const formattedProperties = properties
-                    .filter(property => property.broker_id === 1)
+                    .filter(property => property.broker_id === parseInt(currentBrokerId))
                     .map(property => ({
                         property_id: property.property_id,
                         name: property.name || property.title || 'Unnamed Property'
                     }));
-                console.log('Filtered properties for broker_id=1:', formattedProperties);
+                console.log(`Filtered properties for broker_id=${currentBrokerId}:`, formattedProperties);
 
-                // Format clients data for broker_id = 1
+                // Format clients data for broker_id from localStorage
                 // clientsResponse.data is already an array based on the console log
                 const clients = clientsResponse.data || [];
                 console.log('Clients array:', clients);
 
                 const formattedClients = clients
-                    .filter(client => client.broker_id === 1)
+                    .filter(client => client.broker_id === parseInt(currentBrokerId))
                     .map(client => ({
                         client_id: client.client_id,
-                        first_name: client.first_name || client.name.split(' ')[0] || '',
-                        last_name: client.last_name || (client.name.split(' ').length > 1 ? client.name.split(' ')[1] : ''),
+                        name: client.name,
                         phone: client.phone,
                         email: client.email
                     }));
@@ -145,14 +184,144 @@ const Schedule = () => {
         fetchData();
     }, []);
 
+    // Function to fetch client information by ID
+    const fetchClientById = async (clientId) => {
+        try {
+            const response = await axios.get(`http://localhost:5001/api/client/getOneClient/${clientId}`);
+            return response.data.client || response.data; // Return the client object from the response
+        } catch (error) {
+            console.error(`Error fetching client with ID ${clientId}:`, error);
+            return null;
+        }
+    };
+
+    // Function to get client name from client ID
+    const getClientName = async (clientId) => {
+        try {
+            const response = await axios.get(`http://localhost:5001/api/client/getClientName/${clientId}`);
+            return response.data.clientName || 'Unknown Client';
+        } catch (error) {
+            console.error(`Error fetching client name for ID ${clientId}:`, error);
+            return 'Unknown Client';
+        }
+    };
+
+    // Function to update visits with client names
+    const updateVisitsWithClientNames = async () => {
+        const updatedVisits = [...visits];
+        let hasUpdates = false;
+
+        for (let i = 0; i < updatedVisits.length; i++) {
+            const visit = updatedVisits[i];
+
+            if (visit.client_id && !visit.client_name) {
+                try {
+                    console.log(`Fetching client name for visit ${visit.id} with client_id ${visit.client_id}`);
+                    const clientName = await getClientName(visit.client_id);
+
+                    if (clientName && clientName !== 'Unknown Client') {
+                        updatedVisits[i] = {
+                            ...visit,
+                            client_name: clientName
+                        };
+                        hasUpdates = true;
+                    }
+                } catch (error) {
+                    console.error(`Error updating client name for visit ${visit.id}:`, error);
+                }
+            }
+        }
+
+        if (hasUpdates) {
+            setVisits(updatedVisits);
+        }
+    };
+
+    // Function to update visits with missing client information
+    const updateVisitsWithClientInfo = async () => {
+        const updatedVisits = [...visits];
+        let hasUpdates = false;
+
+        for (let i = 0; i < updatedVisits.length; i++) {
+            const visit = updatedVisits[i];
+
+            // Check if client information is missing or incomplete
+            if (visit.client_id && (visit.client === 'undefined undefined' || visit.client === 'Unknown Client')) {
+                try {
+                    console.log(`Fetching client info for visit ${visit.id} with client_id ${visit.client_id}`);
+                    const clientName = await getClientName(visit.client_id);
+
+                    if (clientName && clientName !== 'Unknown Client') {
+                        updatedVisits[i] = {
+                            ...visit,
+                            client: clientName
+                        };
+                        hasUpdates = true;
+                    }
+                } catch (error) {
+                    console.error(`Error updating client info for visit ${visit.id}:`, error);
+                }
+            }
+
+            // Check if time is invalid
+            if (visit.time === 'Invalid Date') {
+                try {
+                    // Fetch the schedule directly to get the correct time
+                    const response = await axios.get(`http://localhost:5001/api/schedule/${visit.id}`);
+                    const schedule = response.data;
+
+                    if (schedule && schedule.time) {
+                        // Parse time directly
+                        const timeParts = schedule.time.split(':');
+                        if (timeParts.length >= 2) {
+                            const hours = parseInt(timeParts[0]);
+                            const minutes = parseInt(timeParts[1]);
+                            const timeObj = new Date();
+                            timeObj.setHours(hours, minutes, 0);
+                            const formattedTime = timeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                            updatedVisits[i] = {
+                                ...visit,
+                                time: formattedTime
+                            };
+                            hasUpdates = true;
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error updating time for visit ${visit.id}:`, error);
+                }
+            }
+        }
+
+        if (hasUpdates) {
+            console.log('Updated visits with client and time information:', updatedVisits);
+            setVisits(updatedVisits);
+        }
+    };
+
+    // Call the update function after initial data fetch
+    useEffect(() => {
+        if (visits.length > 0 && !loading) {
+            updateVisitsWithClientInfo();
+        }
+    }, [visits, loading]);
+
+    // Update client names after visits are loaded
+    useEffect(() => {
+        if (visits.length > 0) {
+            updateVisitsWithClientNames();
+        }
+    }, [visits]);
+
     // Filter visits based on status and search query
     const filteredVisits = visits.filter(visit => {
         const matchesStatus = filterStatus === 'all' || visit.status === filterStatus;
         const matchesSearch =
             (visit.property && visit.property.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (visit.client && visit.client.toLowerCase().includes(searchQuery.toLowerCase()));
+            (visit.client_name && visit.client_name.toLowerCase().includes(searchQuery.toLowerCase()));
         return matchesStatus && matchesSearch;
     });
+    console.log('Filtered visits:', filteredVisits);
 
     // Function to get status class for styling
     const getStatusClass = (status) => {
@@ -254,22 +423,12 @@ const Schedule = () => {
         }
     };
 
-    // Fetch client name by ID
-    const fetchClientName = async (clientId) => {
-        try {
-            const response = await axios.get(`http://localhost:5001/api/client/getClientName/${clientId}`);
-            return response.data.clientName;
-        } catch (error) {
-            console.error('Error fetching client name:', error);
-            return 'Unknown Client';
-        }
-    };
-
     // Handle visit selection
     const handleVisitSelect = async (visit) => {
+        console.log('Selected visit:', visit);
         setSelectedVisit(visit);
         if (visit && visit.client_id) {
-            const name = await fetchClientName(visit.client_id);
+            const name = await getClientName(visit.client_id);
             setClientName(name);
         } else {
             setClientName('Unknown Client');
@@ -290,15 +449,15 @@ const Schedule = () => {
         e.preventDefault();
 
         try {
-            // Using fixed broker_id = 1
-            const currentBrokerId = 1;
-            console.log('Using broker ID:', currentBrokerId);
+            // Get broker ID from localStorage
+            const currentBrokerId = localStorage.getItem('brokerId');
+            console.log('Using broker ID from localStorage:', currentBrokerId);
 
             // Format the data for the backend
             const scheduleData = {
                 property_id: parseInt(newVisitData.property_id),
                 client_id: parseInt(newVisitData.client_id),
-                broker_id: currentBrokerId, // Fixed broker_id = 1
+                broker_id: parseInt(currentBrokerId), // Broker ID from localStorage
                 description: newVisitData.description,
                 date: newVisitData.date,
                 time: newVisitData.time,
@@ -315,6 +474,7 @@ const Schedule = () => {
                 property_id: response.data.property_id,
                 client: response.data.client ? `${response.data.client.first_name} ${response.data.client.last_name}` : 'Unknown Client',
                 client_id: response.data.client_id,
+                client_name: '', // Initialize client_name field
                 broker_id: response.data.broker_id,
                 broker: response.data.broker ? `${response.data.broker.first_name} ${response.data.broker.last_name}` : 'Unknown Broker',
                 date: new Date(response.data.date).toISOString().split('T')[0],
@@ -373,23 +533,43 @@ const Schedule = () => {
             const date = new Date(currentYear, currentMonth, day);
             const dateString = date.toISOString().split('T')[0];
 
-            // Find visits on this day
-            const dayVisits = visits.filter(visit => visit.date === dateString);
+            // Find visits on this day from filteredVisits instead of all visits
+            const dayVisits = filteredVisits.filter(visit => {
+                // Make sure we're comparing the date part only
+                const visitDate = visit.date ? visit.date.split('T')[0] : null;
+                return visitDate === dateString;
+            });
+
+            console.log(`Day ${day} visits:`, dayVisits); // Log day visits for debugging
 
             days.push(
                 <div key={`day-${day}`} className={`calendar-day ${day === today.getDate() ? 'today' : ''}`}>
                     <div className="day-number">{day}</div>
                     {dayVisits.length > 0 && (
                         <div className="day-visits">
-                            {dayVisits.map(visit => (
-                                <div
-                                    key={visit.id}
-                                    className={`visit-pill ${getStatusClass(visit.status)}`}
-                                    onClick={() => handleVisitSelect(visit)}
-                                >
-                                    {visit.time} - {visit.client}
-                                </div>
-                            ))}
+                            {dayVisits.map(visit => {
+                                // Make sure we have valid data
+                                const clientName = visit.client_name || 'Unknown Client';
+                                const propertyName = visit.property || 'Unknown Property';
+                                const visitTime = visit.time || 'No time';
+                                const visitStatus = visit.status || 'unknown';
+
+                                return (
+                                    <div
+                                        key={visit.id}
+                                        className={`visit-pill ${getStatusClass(visitStatus)}`}
+                                        onClick={() => handleVisitSelect(visit)}
+                                    >
+                                        {visitTime} - {clientName}
+                                        <br />
+                                        <br />
+                                        {propertyName}
+                                        <br />
+                                        <br />
+                                        {visitStatus}
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
@@ -557,7 +737,7 @@ const Schedule = () => {
                                     {filteredVisits.map(visit => (
                                         <tr key={visit.id} onClick={() => handleVisitSelect(visit)}>
                                             <td>{visit.property}</td>
-                                            <td>{visit.client}</td>
+                                            <td>{visit.client_name}</td>
                                             <td>{formatDate(visit.date)}</td>
                                             <td>{visit.time}</td>
                                             <td>
@@ -778,7 +958,7 @@ const Schedule = () => {
                                             <option value="">Select Client</option>
                                             {clients.map((client) => (
                                                 <option key={client.client_id} value={client.client_id}>
-                                                    {client.first_name} {client.last_name}
+                                                    {client.name}
                                                 </option>
                                             ))}
                                         </select>
