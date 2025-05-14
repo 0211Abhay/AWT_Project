@@ -254,7 +254,7 @@ const Rental = () => {
                 const formattedRentals = response.data.rentals.map(rental => ({
                     id: rental.rental_id,
                     property: rental.property ? rental.property.name : 'Unknown Property',
-                    tenant: rental.client ? `${rental.client.first_name} ${rental.client.last_name}` : 'Unknown Client',
+                    tenant: rental.client ? rental.client.name : 'Unknown Client',
                     dueDate: rental.end_date,
                     amount: parseFloat(rental.rent_amount),
                     status: mapRentalStatusToPaymentStatus(rental.status),
@@ -270,7 +270,7 @@ const Rental = () => {
                 const formattedLeases = response.data.rentals.map(rental => ({
                     id: rental.rental_id,
                     property: rental.property ? rental.property.name : 'Unknown Property',
-                    tenant: rental.client ? `${rental.client.first_name} ${rental.client.last_name}` : 'Unknown Client',
+                    tenant: rental.client ? rental.client.name : 'Unknown Client',
                     startDate: rental.start_date,
                     endDate: rental.end_date,
                     status: getLeaseStatus(rental.end_date, rental.status)
