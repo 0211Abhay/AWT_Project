@@ -537,8 +537,8 @@ const Properties = () => {
                                             src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914"
                                             alt={property.name}
                                         />
-                                        <span className="property-status">{property.status}</span>
-                                        <span className="property-for">{property.property_for}</span>
+                                        <span className={`property-status ${property.status?.toLowerCase()}`}>{property.status}</span>
+                                        <span className={`property-for ${property.property_for?.toLowerCase()}`}>{property.property_for}</span>
                                     </div>
 
                                     <div className="property-details">
@@ -635,7 +635,7 @@ const Properties = () => {
 
                                     <div className="modal-feature">
                                         <span className="feature-label">Status</span>
-                                        <span className="feature-value status-badge">
+                                        <span className={`feature-value status-badge ${selectedProperty.status?.toLowerCase()}`}>
                                             {selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
                                         </span>
                                     </div>

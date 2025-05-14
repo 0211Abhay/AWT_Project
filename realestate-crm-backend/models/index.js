@@ -15,6 +15,7 @@ const Broker = require('./broker')(sequelize);
 const Client = require('./clients_model')(sequelize);
 const Property = require('./Property')(sequelize);
 const Schedule = require('./schedule')(sequelize);
+const Rental = require('./rental')(sequelize);
 // Define associations
 Broker.hasMany(Client, { foreignKey: 'broker_id' });
 Client.belongsTo(Broker, { foreignKey: 'broker_id' });
@@ -29,13 +30,24 @@ Schedule.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 Broker.hasMany(Schedule, { foreignKey: 'broker_id', as: 'schedules' });
 Schedule.belongsTo(Broker, { foreignKey: 'broker_id', as: 'broker' });
 
+// Set up Rental associations
+Broker.hasMany(Rental, { foreignKey: 'broker_id', as: 'rentals' });
+Rental.belongsTo(Broker, { foreignKey: 'broker_id', as: 'broker' });
+
+Client.hasMany(Rental, { foreignKey: 'client_id', as: 'rentals' });
+Rental.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
+
+Property.hasMany(Rental, { foreignKey: 'property_id', as: 'rentals' });
+Rental.belongsTo(Property, { foreignKey: 'property_id', as: 'property' });
+
 const db = {
     sequelize,
     Sequelize,
     Broker,
     Client,
     Property,
-    Schedule
+    Schedule,
+    Rental
 };
 
 module.exports = db;

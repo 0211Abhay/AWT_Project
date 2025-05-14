@@ -143,7 +143,7 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
         try {
             // Create a new object with the property data
             const propertyPayload = {
-                broker_id: 1, // Placeholder broker ID
+                broker_id: localStorage.getItem('brokerId'), // Placeholder broker ID
                 name: propertyData.name,
                 location: propertyData.location,
                 price: propertyData.price,

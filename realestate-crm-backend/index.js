@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/client_routes');
 const propertyRoutes = require('./routes/property_routes');
 const scheduleRoutes = require('./routes/schedule_routes');
+const rentalRoutes = require('./routes/rental_routes');
 
 
 const passport = require('passport');
@@ -26,7 +27,7 @@ app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -53,6 +54,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/property', propertyRoutes);
 app.use('/api/schedule', scheduleRoutes);
+app.use('/api/rental', rentalRoutes);
 
 app.use('/api/auth/google', googleAuthRoutes);
 
