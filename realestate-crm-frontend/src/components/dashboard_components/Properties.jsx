@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import "../../style/Properties.css";
 import AddPropertyModel from './AddPropertyModel';
+import { FaFileExport, FaPlus } from 'react-icons/fa';
 
 const Properties = () => {
     // State management
@@ -8,6 +9,7 @@ const Properties = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filtersVisible, setFiltersVisible] = useState(false);
     const [filters, setFilters] = useState({
         type: 'all',
         category: 'all',
@@ -41,36 +43,63 @@ const Properties = () => {
     // Add state for modals
     const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
     const [propertyToEdit, setPropertyToEdit] = useState(null);
+    
+    // Helper function to process property data from API response
+    const processFetchedProperties = (data) => {
+        // Check if data has the expected structure
+        if (data && data.properties) {
+            setProperties(data.properties);
+            // Extract unique filter options from properties
+            extractFilterOptions(data.properties);
+        } else if (Array.isArray(data)) {
+            // Handle case where response is an array directly
+            setProperties(data);
+            // Extract unique filter options from properties
+            extractFilterOptions(data);
+        } else {
+            console.error('Unexpected data structure:', data);
+            setProperties([]);
+        }
+    };
 
     // Fetch properties from API
     const fetchProperties = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:5001/api/property/getAllProperty');
+            
+            // Get broker ID directly from localStorage
+            const brokerId = localStorage.getItem('brokerId');
+            console.log('Using broker ID for properties:', brokerId);
+            
+            // Ensure broker ID is available
+            if (!brokerId) {
+                console.warn('No broker ID found, falling back to all properties');
+                const fallbackResponse = await fetch('http://localhost:5001/api/property/getAllProperty');
+                if (!fallbackResponse.ok) {
+                    throw new Error('Failed to fetch properties');
+                }
+                
+                const fallbackData = await fallbackResponse.json();
+                processFetchedProperties(fallbackData);
+                return;
+            }
+            
+            // Use the broker-specific endpoint with the broker ID
+            const response = await fetch(`http://localhost:5001/api/property/getPropertiesByBroker/${brokerId}`);
 
             if (!response.ok) {
-                throw new Error('Failed to fetch properties');
+                throw new Error('Failed to fetch properties for this broker');
             }
 
             const data = await response.json();
-            console.log('Fetched properties:', data);
-
-            // Check if data has the expected structure
-            if (data && data.properties) {
-                setProperties(data.properties);
-
-                // Extract unique filter options from properties
-                extractFilterOptions(data.properties);
-            } else {
-                console.error('Unexpected data structure:', data);
-                setProperties([]);
-            }
-
-            setLoading(false);
+            console.log('Fetched properties for broker ID', brokerId, ':', data);
+            processFetchedProperties(data);
         } catch (error) {
             console.error('Error fetching properties:', error);
             setError(error.message);
-            setLoading(false);
+            setProperties([]); // Clear properties on error
+        } finally {
+            setLoading(false); // Always stop loading whether success or error
         }
     };
 
@@ -301,27 +330,45 @@ const Properties = () => {
                     <button
                         className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
                         onClick={() => setViewMode('grid')}
+                        aria-label="Grid View"
                     >
                         Grid View
                     </button>
                     <button
                         className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
                         onClick={() => setViewMode('list')}
+                        aria-label="List View"
                     >
                         List View
                     </button>
-
                 </div>
                 <button
                     className="add-property-btn"
                     onClick={openAddPropertyModal}
+                    aria-label="Add New Property"
                 >
-                    Add Property
+                    <FaPlus /> Add Property
+                </button>
+                <button
+                    className="export-btn"
+                    onClick={() => alert('Export button pressed')}
+                    aria-label="Export Properties"
+                >
+                    <FaFileExport /> Export
                 </button>
             </div>
 
-            <div className="property-content">
-                <aside className="property-filters">
+            <button
+                className="filter-toggle-btn"
+                onClick={() => setFiltersVisible(!filtersVisible)}
+                aria-expanded={filtersVisible}
+                aria-controls="property-filters"
+            >
+                {filtersVisible ? 'Hide Filters' : 'Show Filters'}
+            </button>
+
+            <div className={`property-content ${filtersVisible ? 'filters-active' : ''}`}>
+                <aside className="property-filters" id="property-filters" style={{ display: filtersVisible ? 'block' : '' }}>
                     <div className="filter-section">
                         <h3>Filters</h3>
                         <button className="reset-filters-btn" onClick={resetFilters}>Reset All</button>
@@ -546,19 +593,18 @@ const Properties = () => {
                                         <p className="property-location">{property.location}</p>
                                         <div className="property-price">{formatPrice(property.price)}</div>
                                         <div className="property-features">
-                                            <span className="feature">
+                                            <span className="feature" title="Bedrooms">
                                                 <i className="fas fa-bed"></i> {property.bedrooms} Beds
                                             </span>
-                                            <span className="feature">
+                                            <span className="feature" title="Bathrooms">
                                                 <i className="fas fa-bath"></i> {property.bathrooms} Baths
                                             </span>
-                                            <span className="feature">
+                                            <span className="feature" title="Area">
                                                 <i className="fas fa-ruler-combined"></i> {property.area} sq ft
                                             </span>
                                         </div>
                                         <p className="property-type">{property.property_type}</p>
                                         <div className="property-footer">
-                                            {/* <span className="property-agent">{property.contact_agent}</span> */}
                                             <span className="property-year">Built: {property.year_built}</span>
                                         </div>
                                     </div>

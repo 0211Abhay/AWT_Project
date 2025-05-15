@@ -1,7 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 import '../../style/AddPropertyModel.css';
 
 const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
+    const modalRef = useRef(null);
+    
+    useEffect(() => {
+        const handleEscape = (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+        
+        const handleClickOutside = (e) => {
+            if (modalRef.current && !modalRef.current.contains(e.target) && e.target.classList.contains('modal-overlay')) {
+                onClose();
+            }
+        };
+        
+        document.addEventListener('keydown', handleEscape);
+        document.addEventListener('mousedown', handleClickOutside);
+        
+        // Prevent body scrolling when modal is open
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        }
+        
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.body.style.overflow = 'auto';
+        };
+    }, [isOpen, onClose]);
+    
     const [propertyData, setPropertyData] = useState({
         name: '',
         location: '',
@@ -100,7 +132,6 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
             images: prevState.images.filter((_, i) => i !== index)
         }));
     };
-    //fetch all brokers from "brokers" table and dipslay all then in dropdown select optino and while submitting form pass i'ts broker_id in form 
 
     const resetForm = () => {
         setPropertyData({
@@ -204,10 +235,15 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <h2>{isEditMode ? 'Edit Property' : 'Add New Property'}</h2>
+    return isOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div className="modal-content" ref={modalRef}>
+                <div className="modal-header">
+                    <h2 id="modal-title">{isEditMode ? 'Edit Property' : 'Add New Property'}</h2>
+                    <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
+                        <i className="fas fa-times"></i>
+                    </button>
+                </div>
 
                 {error && (
                     <div className="error-message">
@@ -222,7 +258,7 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    <div className="form-row">
+                    <div className="property-controls">
                         <div className="form-group">
                             <label>Property Name</label>
                             <input
@@ -230,6 +266,7 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                                 name="name"
                                 value={propertyData.name}
                                 onChange={handleChange}
+                                placeholder="Enter property name"
                                 required
                             />
                         </div>
@@ -240,12 +277,13 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                                 name="location"
                                 value={propertyData.location}
                                 onChange={handleChange}
+                                placeholder="Enter property location"
                                 required
                             />
                         </div>
                     </div>
 
-                    <div className="form-row">
+                    <div className="property-controls">
                         <div className="form-group">
                             <label>Price ($)</label>
                             <input
@@ -253,6 +291,7 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                                 name="price"
                                 value={propertyData.price}
                                 onChange={handleChange}
+                                placeholder="Enter property price"
                                 required
                             />
                         </div>
@@ -271,7 +310,7 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                         </div>
                     </div>
 
-                    <div className="form-row">
+                    <div className="property-controls">
                         <div className="form-group">
                             <label>Property Type</label>
                             <select
@@ -305,7 +344,7 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                         </div>
                     </div>
 
-                    <div className="form-row">
+                    <div className="property-controls">
                         <div className="form-group">
                             <label>Bedrooms</label>
                             <input
@@ -313,6 +352,9 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                                 name="bedrooms"
                                 value={propertyData.bedrooms}
                                 onChange={handleChange}
+                                min="0"
+                                placeholder="Number of bedrooms"
+                                required
                             />
                         </div>
                         <div className="form-group">
@@ -322,11 +364,14 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                                 name="bathrooms"
                                 value={propertyData.bathrooms}
                                 onChange={handleChange}
+                                min="0"
+                                placeholder="Number of bathrooms"
+                                required
                             />
                         </div>
                     </div>
-
-                    <div className="form-row">
+                    
+                    <div className="property-controls">
                         <div className="form-group">
                             <label>Area (sq ft)</label>
                             <input
@@ -334,6 +379,9 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                                 name="area"
                                 value={propertyData.area}
                                 onChange={handleChange}
+                                min="1"
+                                placeholder="Area in square feet"
+                                required
                             />
                         </div>
                         <div className="form-group">
@@ -343,17 +391,12 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                                 name="year_built"
                                 value={propertyData.year_built}
                                 onChange={handleChange}
+                                min="1800"
+                                max={new Date().getFullYear()}
+                                placeholder="Year property was built"
+                                required
                             />
                         </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Description</label>
-                        <textarea
-                            name="description"
-                            value={propertyData.description}
-                            onChange={handleChange}
-                        />
                     </div>
 
                     <div className="form-group">
@@ -387,11 +430,12 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
                     </div>
 
                     <div className="modal-actions">
-                        <button type="button" onClick={onClose} className="btn-cancel">
-                            Cancel
+                        <button className="btn-cancel" onClick={onClose} type="button">
+                            <i className="fas fa-times"></i> Cancel
                         </button>
-                        <button type="submit" className="btn-submit" disabled={loading}>
-                            {loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Save Changes' : 'Add Property')}
+                        <button className="btn-submit" onClick={handleSubmit} type="button">
+                            <i className={`fas ${isEditMode ? 'fa-save' : 'fa-plus-circle'}`}></i>
+                            {isEditMode ? 'Update Property' : 'Add Property'}
                         </button>
                     </div>
                 </form>

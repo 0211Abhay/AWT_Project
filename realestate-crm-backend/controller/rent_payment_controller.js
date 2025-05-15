@@ -1,5 +1,5 @@
-const { sequelize, RentPayment } = require('../models');
-const { QueryTypes } = require('sequelize');
+const { sequelize, RentPayment, Rental } = require('../models');
+const { QueryTypes, Op } = require('sequelize');
 
 // Add a new rent payment
 const addRentPayment = async (req, res) => {
@@ -9,7 +9,8 @@ const addRentPayment = async (req, res) => {
             payment_date, 
             amount, 
             month, 
-            due_date 
+            due_date,
+            payment_for_month
         } = req.body;
 
         // Validate required fields
@@ -20,6 +21,22 @@ const addRentPayment = async (req, res) => {
         // Format the month name if month data is available
         const formattedMonth = month || new Date(payment_date).toLocaleString('default', { month: 'long', year: 'numeric' });
         
+        // Check for existing payment for this rental and month
+        const existingPayment = await RentPayment.findOne({
+            where: {
+                rental_id,
+                month: formattedMonth
+            }
+        });
+
+        if (existingPayment) {
+            return res.status(400).json({
+                error: 'Duplicate payment',
+                message: `A payment for ${formattedMonth} has already been recorded for this rental.`,
+                details: 'Each rental period can only have one payment entry.'
+            });
+        }
+        
         // Insert payment record into the database using Sequelize model
         const result = await RentPayment.create({
             rental_id, 
@@ -27,7 +44,8 @@ const addRentPayment = async (req, res) => {
             due_date: due_date || payment_date,
             amount_due: amount,
             amount_paid: amount,
-            payment_date, 
+            payment_date,
+            payment_for_month: payment_for_month || payment_date,
             status: 'paid',
             notes: 'Payment recorded via rental management system'
         });

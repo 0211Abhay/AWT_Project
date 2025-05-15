@@ -1,3 +1,4 @@
+/* Base Variables and Settings */
 :root {
     --primary-color: #007FFF;
     --secondary-color: #8338ec;
@@ -15,19 +16,36 @@
     --border-radius: 8px;
 }
 
+/* Base Responsive Styling */
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
 .rental-management {
-    /* padding: 30px; */
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     background-color: #fdfeff;
     min-height: 100vh;
     border: 0px;
+    padding: 20px;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .page-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
+    gap: 15px;
 }
 
 .title-area h1 {
@@ -35,6 +53,7 @@
     font-weight: 600;
     color: var(--dark-color);
     margin: 0;
+    line-height: 1.2;
 }
 
 .title-area p {
@@ -46,6 +65,7 @@
 
 .action-buttons {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
 }
 
@@ -168,7 +188,15 @@
     margin-bottom: 20px;
     background-color: white;
     border-radius: var(--border-radius) var(--border-radius) 0 0;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    position: relative;
+    flex-wrap: nowrap;
+    scroll-behavior: smooth;
+    padding: 0 5px;
 }
 
 .tab-button {
@@ -184,6 +212,11 @@
     transition: all var(--transition-speed) ease;
     gap: 8px;
     border-bottom: 3px solid transparent;
+    flex-shrink: 0;
+    white-space: nowrap;
+    position: relative;
+    text-align: center;
+    justify-content: center;
 }
 
 .tab-button:hover {
@@ -202,6 +235,12 @@
     border-radius: 0 0 var(--border-radius) var(--border-radius);
     padding: 20px;
     box-shadow: 0 2px 10px var(--shadow-color);
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    position: relative;
+    max-width: 100%;
 }
 
 /* Filter Controls */
@@ -264,11 +303,21 @@
 /* Table */
 .table-container {
     overflow-x: auto;
+    width: 100%;
+    margin-bottom: 20px;
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 10px var(--shadow-color);
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    max-width: 100%;
 }
 
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    margin: 0;
+    table-layout: fixed;
 }
 
 .data-table th {
@@ -278,6 +327,7 @@
     font-weight: 600;
     color: var(--gray-color);
     border-bottom: 1px solid var(--border-color);
+    position: relative;
 }
 
 .data-table td {
@@ -285,15 +335,36 @@
     font-size: 14px;
     border-bottom: 1px solid var(--border-color);
     color: var(--dark-color);
+    position: relative;
+    word-break: break-word;
 }
 
 .data-table tr {
     transition: background-color var(--transition-speed) ease;
+    position: relative;
 }
 
 .data-table tbody tr:hover {
     background-color: #f8f9fa;
     cursor: pointer;
+}
+
+/* Responsive table styles for different screen sizes */
+@media (max-width: 1200px) {
+
+    .data-table th,
+    .data-table td {
+        padding: 12px 10px;
+    }
+}
+
+@media (max-width: 992px) {
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
 }
 
 .status-badge {
@@ -767,8 +838,13 @@ input:checked+.slider:before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
+    position: relative;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .modal-header h2 {
@@ -843,9 +919,17 @@ input:checked+.slider:before {
 }
 
 @keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
 }
 
 /* Responsive */
@@ -907,5 +991,897 @@ input:checked+.slider:before {
     .documents-grid,
     .reminders-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* Styles from dashboard_components/Rental.css */
+.payment-source {
+    display: inline-block;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.payment-info {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.section-info {
+    background-color: #f9f9f9;
+    border-left: 4px solid #2196f3;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.section-info strong {
+    color: #1976d2;
+}
+
+/* Special styling for records from the rent_payments table */
+tr.from-database {
+    background-color: #f0f8ff !important;
+}
+
+tr.from-database:hover {
+    background-color: #e1f5fe !important;
+}
+
+/* Add a subtle indicator to paid records from the database */
+.payment-badge {
+    font-size: 10px;
+    background-color: #4caf50;
+    color: white;
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin-left: 5px;
+    vertical-align: middle;
+}
+
+/* Additional responsive enhancements */
+/* Intermediate sizes - 600px to 768px (Tablets) */
+@media (min-width: 600px) and (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+        max-width: 100%;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 6px;
+    }
+
+    .data-table {
+        min-width: unset;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .modal-header {
+        padding: 15px 10px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .modal-header h2,
+    .modal-header h3 {
+        font-size: 18px;
+        margin-right: auto;
+    }
+
+    .payment-details-modal {
+        width: 90% !important;
+        max-width: 650px !important;
+        padding: 15px !important;
+    }
+
+    .payment-details-modal .modal-header button {
+        position: relative !important;
+        right: 0 !important;
+        top: 0 !important;
+        transform: none !important;
+    }
+
+    /* Ensure action buttons are visible in payment details modal */
+    .payment-details-modal .data-table td[data-label="Actions"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+    }
+
+    .payment-details-modal .data-table td[data-label="Actions"] button {
+        margin-top: 5px;
+        width: auto !important;
+        min-width: 120px !important;
+        white-space: nowrap;
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+}
+
+/* Intermediate sizes - 481px to 599px (Small Tablets) */
+@media (min-width: 481px) and (max-width: 599px) {
+    .table-container {
+        overflow-x: auto;
+        max-width: 100%;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 6px;
+        padding: 0;
+    }
+
+    .data-table {
+        min-width: unset;
+        width: 100%;
+        table-layout: fixed;
+        font-size: 13px;
+    }
+
+    .modal-header {
+        padding: 12px 8px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .modal-header h2,
+    .modal-header h3 {
+        font-size: 17px;
+        margin-bottom: 5px;
+        width: 100%;
+    }
+
+    .payment-details-modal {
+        width: 95% !important;
+        max-width: 550px !important;
+        padding: 12px !important;
+    }
+
+    .payment-details-modal .modal-header button {
+        position: absolute !important;
+        right: 5px !important;
+        top: 5px !important;
+        transform: none !important;
+    }
+
+    /* Ensure action buttons are visible in payment details modal */
+    .payment-details-modal .data-table td[data-label="Actions"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+    }
+
+    .payment-details-modal .data-table td[data-label="Actions"] button {
+        margin-top: 5px;
+        width: auto !important;
+        min-width: 120px !important;
+        white-space: nowrap;
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+}
+
+/* Large screens - 769px to 992px */
+@media (min-width: 769px) and (max-width: 992px) {
+    .rental-management {
+        padding: 15px;
+    }
+
+    .tab-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .filter-actions,
+    .search-bar {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .status-filters {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        max-width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table {
+        min-width: unset;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .modal-header {
+        padding: 18px 12px;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .modal-content {
+        width: 95%;
+    }
+
+    .payment-details-modal {
+        width: 85% !important;
+        max-width: 780px !important;
+    }
+
+    /* Ensure action buttons are visible in payment details modal */
+    .payment-details-modal .data-table td[data-label="Actions"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+    }
+
+    .payment-details-modal .data-table td[data-label="Actions"] button {
+        margin-top: 5px;
+        width: auto !important;
+        min-width: 120px !important;
+        white-space: nowrap;
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .form-group {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .action-buttons {
+        width: 100%;
+    }
+
+    .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 3px;
+        padding: 5px;
+    }
+
+    .tab {
+        white-space: nowrap;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    /* Enhanced responsive styling for content-tabs */
+    .content-tabs {
+        padding: 0 3px;
+        margin-bottom: 15px;
+    }
+
+    .tab-button {
+        padding: 12px 16px;
+        font-size: 14px;
+        gap: 6px;
+    }
+
+    .tab-button svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Enhanced responsive styling for content-area */
+    .content-area {
+        padding: 15px;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .filter-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 10px 8px;
+        font-size: 14px;
+    }
+
+    .modal-header {
+        padding: 15px;
+    }
+
+    .modal-body {
+        padding: 15px;
+    }
+
+    .btn {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}
+
+/* Mobile specific fixes for button display */
+@media (max-width: 480px) {
+    .rental-management {
+        padding: 10px;
+    }
+
+    .title-area h1 {
+        font-size: 22px;
+    }
+
+    .title-area p {
+        font-size: 13px;
+    }
+
+    .action-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Enhanced responsive styling for content-tabs */
+    .content-tabs {
+        padding: 0;
+        margin-bottom: 12px;
+    }
+
+    .tab-button {
+        padding: 10px 12px;
+        font-size: 13px;
+        gap: 4px;
+    }
+
+    .tab-button svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Enhanced responsive styling for content-area */
+    .content-area {
+        padding: 12px 10px;
+        border-radius: 0 0 6px 6px;
+        margin-bottom: 20px;
+        max-width: 100vw;
+    }
+
+    /* Adapt all table containers for mobile */
+    .table-container {
+        width: 100%;
+        position: relative;
+        overflow: visible;
+        margin: 0 !important;
+        padding: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
+
+    /* Change table layout to stack vertically on mobile */
+    .table-container table {
+        display: block;
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-container thead {
+        display: none;
+        /* Hide headers */
+    }
+
+    .table-container tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .table-container tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 0;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .table-container td {
+        display: flex;
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+    }
+
+    .table-container td:last-child {
+        border-bottom: none;
+    }
+
+    .table-container td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        float: left;
+        text-align: left;
+        color: #555;
+        padding-right: 10px;
+    }
+
+    /* Make form elements full-width on mobile */
+    .content-area input[type="text"],
+    .content-area input[type="number"],
+    .content-area input[type="email"],
+    .content-area input[type="date"],
+    .content-area select,
+    .content-area textarea {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    /* Critical fix: Ensure buttons are displayed on mobile devices */
+    .action-btn,
+    button,
+    .action-btn.details-btn,
+    button.action-btn.mark-paid-btn,
+    button.action-btn.view-receipt-btn {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-width: 100px !important;
+        margin: 3px 0 !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        padding: 8px 10px !important;
+    }
+
+    /* Fix for monthly payment modal actions column */
+    .payment-details-modal td[data-label="Actions"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        padding: 10px 5px !important;
+        min-height: 80px !important;
+    }
+
+    .payment-details-modal td[data-label="Actions"] button {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        min-width: 120px !important;
+        margin: 5px 0 !important;
+        white-space: nowrap !important;
+        padding: 10px !important;
+        font-size: 14px !important;
+        border-radius: 5px !important;
+        text-align: center !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+
+    /* Improve card layouts for mobile */
+    .payment-card,
+    .property-card,
+    .lease-card,
+    .document-card,
+    .reminder-card {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    /* Stack details in cards */
+    .card-details {
+        flex-direction: column;
+    }
+
+    /* Optimize action buttons in cards */
+    .card-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .card-actions button {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .status-badge {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+
+    .search-input {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+
+    .data-table {
+        min-width: unset;
+        font-size: 12px;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    /* Add horizontal scrolling indicators */
+    .content-area::before,
+    .content-area::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 15px;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .content-area::before {
+        left: 0;
+        background: linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+    }
+
+    .content-area::after {
+        right: 0;
+        background: linear-gradient(to left, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+    }
+
+    /* Transform tables for mobile view */
+    .responsive-table,
+    .data-table {
+        display: block;
+        width: 100%;
+        border: none;
+    }
+
+    .responsive-table thead,
+    .data-table thead {
+        display: none;
+        /* Hide table headers on mobile */
+    }
+
+    .responsive-table tbody,
+    .data-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .responsive-table tr,
+    .data-table tr {
+        display: block;
+        margin-bottom: 15px;
+        padding: 12px 10px;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e0e0e0;
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .responsive-table tr:active,
+    .data-table tr:active {
+        transform: translateY(1px);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .responsive-table td,
+    .data-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        padding: 10px 8px;
+        border-bottom: 1px solid #eeeeee;
+        position: relative;
+        text-align: right;
+        line-height: 1.4;
+        min-height: 40px;
+        width: 100% !important;
+        /* Force full width */
+        box-sizing: border-box;
+        word-break: break-word;
+        margin: 0;
+    }
+
+    .responsive-table td:last-child,
+    .data-table td:last-child {
+        border-bottom: none;
+    }
+
+    .responsive-table td:before,
+    .data-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        width: 35%;
+        min-width: 80px;
+        max-width: 120px;
+        color: #555;
+        text-align: left;
+        padding-right: 8px;
+        font-size: 11px;
+    }
+
+    /* Styling for different data types */
+    .data-table td[data-label="Property"],
+    .data-table td[data-label="Tenant"],
+    .data-table td[data-label="Month"] {
+        font-weight: 600;
+        font-size: 14px;
+        border-bottom: 1px solid #e0e0e0;
+        background-color: #f9f9fb;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .data-table td[data-label="Due Date"],
+    .data-table td[data-label="Start Date"],
+    .data-table td[data-label="End Date"],
+    .data-table td[data-label="Payment Date"] {
+        color: #555;
+    }
+
+    .data-table td[data-label="Amount"] {
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* Enhanced button styling for all tables */
+    .data-table .action-btn,
+    .data-table button {
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-block !important;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .data-table .action-btn:active,
+    .data-table button:active {
+        transform: translateY(1px);
+    }
+
+    /* Payment details modal table fixes for mobile */
+    .payment-details-modal .data-table tr {
+        position: relative;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e0e0e0;
+    }
+
+    .payment-details-modal .data-table td {
+        padding: 8px 6px;
+        border-bottom: 1px solid #eee;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+    }
+
+    .payment-details-modal .data-table td:last-child {
+        border-bottom: none;
+    }
+
+    .payment-details-modal .data-table td:before {
+        content: attr(data-label);
+        font-weight: 500;
+        font-size: 13px;
+        width: 40%;
+        color: #444;
+        padding-right: 10px;
+    }
+
+    /* Month styling */
+    .payment-details-modal .data-table td[data-label="Month"] {
+        font-weight: 600;
+        color: #333;
+        font-size: 14px;
+    }
+
+    /* Date fields styling */
+    .payment-details-modal .data-table td[data-label="Start Date"],
+    .payment-details-modal .data-table td[data-label="End Date"],
+    .payment-details-modal .data-table td[data-label="Payment Date"] {
+        color: #555;
+    }
+
+    /* Amount field styling */
+    .payment-details-modal .data-table td[data-label="Amount"] {
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* Status field styling - ensure visibility on all devices */
+    .payment-details-modal .data-table td[data-label="Status"] {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .payment-details-modal .data-table td[data-label="Status"] span {
+        min-width: 80px;
+        text-align: center;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: 16px;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Payment Date field styling - ensure visibility */
+    .payment-details-modal .data-table td[data-label="Payment Date"] {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        color: #555;
+    }
+
+    .payment-details-modal .data-table td[data-label="Actions"] button {
+        margin-top: 5px;
+        width: auto;
+        min-width: 120px;
+        white-space: nowrap;
+        display: inline-block !important;
+        visibility: visible !important;
+        padding: 8px 12px !important;
+        border-radius: 4px !important;
+        font-size: 13px !important;
+        text-align: center;
+    }
+
+    .responsive-table td:last-child,
+    .data-table td:last-child {
+        border-bottom: none;
+    }
+
+    .responsive-table td:before,
+    .data-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        width: 35%;
+        min-width: 80px;
+        max-width: 120px;
+        color: #555;
+        text-align: left;
+        padding-right: 8px;
+        font-size: 11px;
+    }
+
+    /* Completely remove standard table formatting on mobile */
+    .data-table {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-width: unset !important;
+    }
+
+    .data-table th {
+        font-size: 12px;
+        padding: 6px 4px;
+    }
+
+    .data-table td {
+        font-size: 12px;
+        padding: 6px 4px;
+    }
+
+    /* Improve status badges display on mobile */
+    td .status-badge {
+        margin-left: auto;
+    }
+
+    .modal-title {
+        font-size: 18px;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    /* Mobile-optimized section containers */
+    .section-container {
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    /* Mobile-optimized content groups */
+    .content-group {
+        margin-bottom: 15px;
+    }
+
+    /* Mobile-friendly summary cards */
+    .summary-card {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    /* Mobile-optimized payment history */
+    .payment-history-item {
+        padding: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .payment-details {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .payment-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    /* Mobile-optimized document list */
+    .document-list {
+        display: block;
+    }
+
+    .document-item {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .document-icon {
+        margin-right: 10px;
+    }
+
+    /* Improve visual spacing for section headers */
+    h2,
+    h3 {
+        margin-top: 20px;
+        margin-bottom: 15px;
+        font-size: 18px;
+    }
+
+    h4 {
+        margin-top: 15px;
+        margin-bottom: 10px;
+        font-size: 16px;
     }
 }

@@ -120,6 +120,28 @@
     transform: translateY(-2px);
 }
 
+.export-btn {
+    background-color: var(--success-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-left: 10px;
+}
+
+.export-btn:hover {
+    background-color: #2d9400;
+    transform: translateY(-2px);
+}
+
 .clients-list {
     width: 100%;
     margin-top: 20px;
