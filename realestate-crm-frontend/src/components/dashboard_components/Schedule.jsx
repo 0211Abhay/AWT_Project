@@ -32,6 +32,24 @@ const Schedule = () => {
         // broker_id is fixed to 1, so removed from state
     });
 
+    // Check localStorage for property ID on component mount
+    useEffect(() => {
+        const scheduledPropertyId = localStorage.getItem('schedulePropertyId');
+        if (scheduledPropertyId) {
+            // Set the property ID in the new visit form data
+            setNewVisitData(prev => ({
+                ...prev,
+                property_id: scheduledPropertyId
+            }));
+            
+            // Open the new visit modal
+            setShowNewVisitForm(true);
+            
+            // Clear the property ID from localStorage to prevent it from opening on refresh
+            localStorage.removeItem('schedulePropertyId');
+        }
+    }, []);
+
     // Fetch all schedules, properties, clients, and brokers
     useEffect(() => {
         const fetchData = async () => {

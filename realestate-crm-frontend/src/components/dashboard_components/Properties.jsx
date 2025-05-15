@@ -684,7 +684,17 @@ const Properties = () => {
                                 </div> */}
 
                                 <div className="modal-actions">
-                                    <button className="schedule-viewing-btn">Schedule Viewing</button>
+                                    <button
+                                        className="schedule-viewing-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Prevent closing the modal
+                                            // Navigate to Schedule page and store the property ID to open the new visit modal
+                                            localStorage.setItem('schedulePropertyId', selectedProperty.property_id);
+                                            window.location.href = '/dashboard/schedule';
+                                        }}
+                                    >
+                                        Schedule Viewing
+                                    </button>
                                     <button
                                         className="edit-property-btn"
                                         onClick={(e) => {
