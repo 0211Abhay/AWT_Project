@@ -311,12 +311,12 @@ const Client = () => {
                     <tbody>
                         {filteredClients.map(client => (
                             <tr key={client.id}>
-                                <td>{client.name}</td>
-                                <td>{client.email}</td>
-                                <td>{client.phone}</td>
-                                <td>{client.address}</td>
-                                <td>{new Date(client.joinDate).toLocaleDateString()}</td>
-                                <td>
+                                <td data-label="Name">{client.name}</td>
+                                <td data-label="Email">{client.email}</td>
+                                <td data-label="Phone">{client.phone}</td>
+                                <td data-label="Address">{client.address}</td>
+                                <td data-label="Joined">{new Date(client.joinDate).toLocaleDateString()}</td>
+                                <td data-label="Actions">
                                     <button
                                         onClick={() => editClient(client)}
                                         className="edit-btn"
