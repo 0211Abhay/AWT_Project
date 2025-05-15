@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import "../../style/Properties.css";
 import AddPropertyModel from './AddPropertyModel';
 import { FaFileExport, FaPlus } from 'react-icons/fa';
+import ExportProperties from '../ExportProperties';
 
 const Properties = () => {
     // State management
@@ -43,6 +44,7 @@ const Properties = () => {
     // Add state for modals
     const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
     const [propertyToEdit, setPropertyToEdit] = useState(null);
+    const [isExporting, setIsExporting] = useState(false);
     
     // Helper function to process property data from API response
     const processFetchedProperties = (data) => {
@@ -351,11 +353,28 @@ const Properties = () => {
                 </button>
                 <button
                     className="export-btn"
-                    onClick={() => alert('Export button pressed')}
+                    onClick={() => {
+                        // Get broker ID from localStorage
+                        const brokerId = localStorage.getItem('brokerId');
+                        if (!brokerId) {
+                            alert('Error: Broker ID not found. Please log in again.');
+                            return;
+                        }
+                        
+                        // Activate export component
+                        setIsExporting(true);
+                        setTimeout(() => setIsExporting(false), 3000); // Reset after 3 seconds
+                        
+                        // Show feedback to user
+                        alert('Exporting properties to Excel...');
+                    }}
                     aria-label="Export Properties"
                 >
                     <FaFileExport /> Export
                 </button>
+                
+                {/* Export component - only rendered when exporting is active */}
+                {isExporting && <ExportProperties brokerId={localStorage.getItem('brokerId')} />}
             </div>
 
             <button
