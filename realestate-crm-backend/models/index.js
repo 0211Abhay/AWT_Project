@@ -16,6 +16,7 @@ const Client = require('./clients_model')(sequelize);
 const Property = require('./Property')(sequelize);
 const Schedule = require('./schedule')(sequelize);
 const Rental = require('./rental')(sequelize);
+const RentPayment = require('./RentPayment')(sequelize);
 // Define associations
 Broker.hasMany(Client, { foreignKey: 'broker_id' });
 Client.belongsTo(Broker, { foreignKey: 'broker_id' });
@@ -40,6 +41,10 @@ Rental.belongsTo(Client, { foreignKey: 'client_id', as: 'client' });
 Property.hasMany(Rental, { foreignKey: 'property_id', as: 'rentals' });
 Rental.belongsTo(Property, { foreignKey: 'property_id', as: 'property' });
 
+// Set up RentPayment associations
+Rental.hasMany(RentPayment, { foreignKey: 'rental_id', as: 'payments' });
+RentPayment.belongsTo(Rental, { foreignKey: 'rental_id', as: 'rental' });
+
 const db = {
     sequelize,
     Sequelize,
@@ -47,7 +52,8 @@ const db = {
     Client,
     Property,
     Schedule,
-    Rental
+    Rental,
+    RentPayment
 };
 
 module.exports = db;
