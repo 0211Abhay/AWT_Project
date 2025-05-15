@@ -287,11 +287,17 @@
 
 .property-grid.list .property-card {
     display: flex;
+    align-items: stretch;
+    height: auto;
+    min-height: 200px;
+    margin-bottom: 20px;
 }
 
 .property-grid.list .property-image {
     width: 300px;
     flex-shrink: 0;
+    height: 100%;
+    min-height: 200px;
 }
 
 .property-grid.list .property-details {
@@ -299,29 +305,91 @@
     padding: 25px;
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.property-grid.list .property-title {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.property-grid.list .property-location {
+    font-size: 15px;
+    margin-bottom: 15px;
+}
+
+.property-grid.list .property-price {
+    font-size: 22px;
+    margin-bottom: 15px;
+}
+
+.property-grid.list .property-features {
+    margin: 10px 0;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.property-grid.list .property-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
 }
 
 .property-image {
-    position: relative;
+position: relative;
+height: 200px;
+overflow: hidden;
 }
 
 .property-image img {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
-    display: block;
-    transition: transform var(--transition-speed);
+width: 100%;
+height: 100%;
+object-fit: cover;
+transition: transform var(--transition-speed);
 }
 
 .property-card:hover .property-image img {
-    transform: scale(1.05);
+transform: scale(1.05);
+}
+
+.property-status,
+.property-for {
+position: absolute;
+padding: 6px 12px;
+font-size: 12px;
+font-weight: 600;
+border-radius: 20px;
+z-index: 1;
+box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.property-status {
+top: 15px;
+right: 15px;
+background-color: var(--success-color);
+color: white;
+}
+
+.property-for {
+top: 15px;
+left: 15px;
+background-color: var(--accent-color);
+color: white;
 }
 
 .featured-tag,
 .status-tag,
 .category-tag {
-    position: absolute;
-    padding: 6px 12px;
+position: absolute;
+padding: 6px 12px;
+font-size: 12px;
+font-weight: 600;
+border-radius: var(--border-radius);
+z-index: 1;
     font-size: 12px;
     font-weight: 600;
     border-radius: 20px;
@@ -362,15 +430,17 @@
 }
 
 .property-title {
-    margin: 0 0 10px;
+    margin: 0 0 5px;
     font-size: 18px;
     font-weight: 600;
+    line-height: 1.3;
     color: var(--dark-color);
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
     overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    max-height: 1.3em;
 }
 
 .property-location {
@@ -670,6 +740,35 @@
     border-radius: 50px;
     font-size: 14px;
     font-weight: 600;
+}
+
+/* Status variations */
+.property-status.available,
+.status-badge.available {
+    background-color: var(--success-color);
+}
+
+.property-status.sold,
+.status-badge.sold {
+    background-color: var(--danger-color);
+}
+
+.property-status.pending,
+.status-badge.pending {
+    background-color: var(--warning-color);
+}
+
+/* Property-for variations */
+.property-for.sale {
+    background-color: var(--accent-color);
+}
+
+.property-for.rent {
+    background-color: var(--secondary-color);
+}
+
+.property-for.lease {
+    background-color: var(--primary-color);
 }
 
 .modal-description,

@@ -85,3 +85,15 @@ exports.getClientNameById = async (req, res) => {
     }
 };
 
+
+exports.getClientsByBroker = async (req, res) => {
+    try {
+        console.log("Received broker_id:", req.body.broker_id);
+        const clients = await Client.findAll({ where: { broker_id: req.body.broker_id } });
+        console.log("Fetched clients:", clients);
+        res.status(200).json(clients);
+    } catch (error) {
+        console.error("Error fetching clients:", error);
+        res.status(500).json({ error: error.message });
+    }
+};

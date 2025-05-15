@@ -2,11 +2,11 @@ const { Property } = require('../models');
 
 exports.createProperty = async (req, res) => {
     try {
-        const { broker_id, name, location, price, property_for, property_type, bedrooms, bathrooms, area, contact_agent, year_built, status, description, amenities, images } = req.body;
+        const { broker_id, name, location, price, property_for, property_type, bedrooms, bathrooms, area, year_built, status, description, amenities, images } = req.body;
 
         // Process amenities to ensure it's a proper array
-        const processedAmenities = typeof amenities === 'string' ? 
-            (amenities.startsWith('[') ? JSON.parse(amenities) : [amenities]) : 
+        const processedAmenities = typeof amenities === 'string' ?
+            (amenities.startsWith('[') ? JSON.parse(amenities) : [amenities]) :
             amenities;
 
         const property = await Property.create({
@@ -19,7 +19,6 @@ exports.createProperty = async (req, res) => {
             bedrooms,
             bathrooms,
             area,
-            contact_agent,
             year_built,
             status,
             description,
@@ -33,6 +32,7 @@ exports.createProperty = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
 exports.getPropertyById = async (req, res) => {
     try {
         const { property_id } = req.params;
@@ -46,6 +46,7 @@ exports.getPropertyById = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 exports.getAllProperties = async (req, res) => {
     try {
         const properties = await Property.findAll();
@@ -55,10 +56,11 @@ exports.getAllProperties = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 exports.updateProperty = async (req, res) => {
     try {
         const { property_id } = req.params;
-        const { broker_id, name, location, price, property_for, property_type, bedrooms, bathrooms, area, contact_agent, year_built, status, description, amenities, images } = req.body;
+        const { broker_id, name, location, price, property_for, property_type, bedrooms, bathrooms, area, year_built, status, description, amenities, images } = req.body;
 
         const property = await Property.findByPk(property_id);
 
@@ -67,8 +69,8 @@ exports.updateProperty = async (req, res) => {
         }
 
         // Process amenities to ensure it's a proper array
-        const processedAmenities = typeof amenities === 'string' ? 
-            (amenities.startsWith('[') ? JSON.parse(amenities) : [amenities]) : 
+        const processedAmenities = typeof amenities === 'string' ?
+            (amenities.startsWith('[') ? JSON.parse(amenities) : [amenities]) :
             amenities;
 
         await property.update({
@@ -81,7 +83,6 @@ exports.updateProperty = async (req, res) => {
             bedrooms,
             bathrooms,
             area,
-            contact_agent,
             year_built,
             status,
             description,
@@ -95,6 +96,7 @@ exports.updateProperty = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 exports.deleteProperty = async (req, res) => {
     try {
         const { property_id } = req.params;
@@ -105,6 +107,15 @@ exports.deleteProperty = async (req, res) => {
         res.status(200).json({ message: 'Property deleted successfully' });
     } catch (error) {
         console.error('Error deleting property:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getPropertiesByBroker = async (req, res) => {
+    try {
+        const properties = await Property.findAll({ where: { broker_id: req.params.broker_id } });
+        res.status(200).json(properties);
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 };
