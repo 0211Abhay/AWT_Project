@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaFileExport } from 'react-icons/fa';
+import ExportClients from '../ExportClients';
 
 import "../../style/Clients.css"
 
@@ -12,6 +13,7 @@ const Client = () => {
     const [isEditingClient, setIsEditingClient] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isExporting, setIsExporting] = useState(false);
     const [selectedClient, setSelectedClient] = useState(null);
     const [clientSchedules, setClientSchedules] = useState([]);
     const [clientProperties, setClientProperties] = useState([]);
@@ -93,9 +95,18 @@ const Client = () => {
 
                     setClientRentals(formattedRentals);
 
-                    // Fetch paid payments for these rentals
+                    // Fetch paid payments for these rentals filtered by broker ID
                     try {
-                        const paidPaymentsResponse = await axios.get('http://localhost:5001/api/payment/getAllPaidPayments');
+                        // Get current broker ID from localStorage
+                        const brokerId = localStorage.getItem('brokerId');
+                        if (!brokerId) {
+                            console.error('No broker ID found in localStorage for payments');
+                            setPaidPayments([]);
+                            return;
+                        }
+                        
+                        // Use the new endpoint with broker ID parameter
+                        const paidPaymentsResponse = await axios.get(`http://localhost:5001/api/payment/getAllPaidPayments/${brokerId}`);
                         const fetchedPaidPayments = paidPaymentsResponse.data?.payments || [];
 
                         // Filter to get only payments relevant to this client's rentals
@@ -193,7 +204,7 @@ const Client = () => {
             if (!brokerId) {
                 throw new Error('Broker ID not found. Please log in again.');
             }
-
+            
             const response = await fetch('http://localhost:5001/api/client/createClient', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -312,12 +323,29 @@ const Client = () => {
                     Add New Client
                 </button>
                 <button
-                    onClick={() => alert('Export button pressed')}
+                    onClick={() => {
+                        // Get broker ID from localStorage
+                        const brokerId = localStorage.getItem('brokerId');
+                        if (!brokerId) {
+                            alert('Error: Broker ID not found. Please log in again.');
+                            return;
+                        }
+                        
+                        // Activate export component
+                        setIsExporting(true);
+                        setTimeout(() => setIsExporting(false), 3000); // Reset after 3 seconds
+                        
+                        // Show feedback to user
+                        alert('Exporting clients to Excel...');
+                    }}
                     className="export-btn"
                     aria-label="Export Clients"
                 >
                     <FaFileExport /> Export
                 </button>
+                
+                {/* Export component - only rendered when exporting is active */}
+                {isExporting && <ExportClients brokerId={localStorage.getItem('brokerId')} />}
             </div>
 
             {error && (

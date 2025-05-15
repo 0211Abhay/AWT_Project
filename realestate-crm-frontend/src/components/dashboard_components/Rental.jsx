@@ -48,10 +48,15 @@ const Rental = () => {
     // Get current broker ID from localStorage on component mount
     useEffect(() => {
         try {
-            // Get broker info from localStorage
-            const brokerInfo = JSON.parse(localStorage.getItem('brokerInfo')) || {};
-            const brokerId = brokerInfo.brokerId || '2'; // Default to broker ID 2 if not found
-            console.log('Current broker ID:', brokerId);
+            // Get broker ID directly from localStorage
+            const brokerId = localStorage.getItem('brokerId');
+            console.log('Current broker ID for rental component:', brokerId);
+
+            if (!brokerId) {
+                console.error('No broker ID found in localStorage');
+                setError('Broker ID not found. Please log in again.');
+                return;
+            }
 
             setCurrentBrokerId(brokerId);
             setNewRental(prev => ({
@@ -64,11 +69,10 @@ const Rental = () => {
             fetchDocuments();
         } catch (error) {
             console.error('Error getting broker info from localStorage:', error);
-            // Fallback to broker ID 2
-            setCurrentBrokerId('2');
+            setError('Error loading broker information. Please refresh and try again.');
             setNewRental(prev => ({
                 ...prev,
-                broker_id: '2'
+                broker_id: ''
             }));
         }
     }, []);
@@ -260,19 +264,27 @@ const Rental = () => {
     const fetchRentals = async () => {
         try {
             setLoadingData(true);
-            // Get broker ID from localStorage
-            const brokerInfo = JSON.parse(localStorage.getItem('brokerInfo')) || {};
-            const currentBrokerId = brokerInfo.brokerId || '2'; // Default to broker ID 2 if not found
+            // Get broker ID directly from localStorage
+            const currentBrokerId = localStorage.getItem('brokerId');
+            console.log('Using broker ID for rentals:', currentBrokerId);
+            
+            if (!currentBrokerId) {
+                console.error('No broker ID found in localStorage');
+                setError('Broker ID not found. Please log in again.');
+                setLoadingData(false);
+                return;
+            }
 
             // Fetch rentals from the API using the broker-specific endpoint
             const rentalResponse = await axios.get(`http://localhost:5001/api/rental/getRentalsByBroker/${currentBrokerId}`);
 
-            // Fetch all paid payments directly from rent_payments table
-            const paidPaymentsResponse = await axios.get('http://localhost:5001/api/payment/getAllPaidPayments');
+            // Fetch paid payments filtered by broker ID
+            const paidPaymentsResponse = await axios.get(`http://localhost:5001/api/payment/getAllPaidPayments/${currentBrokerId}`);
             const fetchedPaidPayments = paidPaymentsResponse.data?.payments || [];
 
             // Store the paid payments separately for the Paid section
             setPaidPayments(fetchedPaidPayments);
+            console.log(`Fetched ${fetchedPaidPayments.length} paid payments for broker ID: ${currentBrokerId}`);
 
             if (rentalResponse.data && rentalResponse.data.rentals) {
                 // Map the rental data for the Due and Overdue sections
