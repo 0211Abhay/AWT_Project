@@ -63,7 +63,7 @@ const Navbar = ({ activeSection, onNavigate }) => {
         <nav className={`navbar ${!isVisible ? 'navbar-hidden' : ''}`}>
             <div className="navbar-container">
                 <Link to="/" className="navbar-logo">
-                    Logo
+                    Estatemate
                 </Link>
 
                 <div className="nav-items">

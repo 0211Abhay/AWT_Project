@@ -27,7 +27,7 @@ const Properties = () => {
     const [viewMode, setViewMode] = useState('grid');
     const [selectedProperty, setSelectedProperty] = useState(null);
     const [isViewingDetails, setIsViewingDetails] = useState(false);
-    
+
     // Add state for filter options
     const [filterOptions, setFilterOptions] = useState({
         propertyTypes: [],
@@ -41,7 +41,7 @@ const Properties = () => {
     // Add state for modals
     const [isAddPropertyModalOpen, setIsAddPropertyModalOpen] = useState(false);
     const [propertyToEdit, setPropertyToEdit] = useState(null);
-    
+
     // Fetch properties from API
     const fetchProperties = async () => {
         try {
@@ -58,7 +58,7 @@ const Properties = () => {
             // Check if data has the expected structure
             if (data && data.properties) {
                 setProperties(data.properties);
-                
+
                 // Extract unique filter options from properties
                 extractFilterOptions(data.properties);
             } else {
@@ -73,31 +73,31 @@ const Properties = () => {
             setLoading(false);
         }
     };
-    
+
     // Extract unique filter options from properties
     const extractFilterOptions = (propertiesData) => {
         // Extract unique property types
         const propertyTypes = [...new Set(propertiesData.map(p => p.property_type))].filter(Boolean);
-        
+
         // Extract unique property categories (property_for)
         const propertyCategories = [...new Set(propertiesData.map(p => p.property_for))].filter(Boolean);
-        
+
         // Extract unique bedroom counts and sort them
         const bedroomOptions = [...new Set(propertiesData.map(p => p.bedrooms))]
             .filter(Boolean)
             .sort((a, b) => a - b);
-            
+
         // Extract unique bathroom counts and sort them
         const bathroomOptions = [...new Set(propertiesData.map(p => p.bathrooms))]
             .filter(Boolean)
             .sort((a, b) => a - b);
-            
+
         // Extract unique status options
         const statusOptions = [...new Set(propertiesData.map(p => p.status))].filter(Boolean);
-        
+
         // Extract unique locations
         const locations = [...new Set(propertiesData.map(p => p.location))].filter(Boolean);
-        
+
         setFilterOptions({
             propertyTypes,
             propertyCategories,
@@ -123,7 +123,7 @@ const Properties = () => {
     const closeAddPropertyModal = (refreshData = false) => {
         setIsAddPropertyModalOpen(false);
         setPropertyToEdit(null);
-        
+
         // Refresh property data if requested (after successful add/edit)
         if (refreshData) {
             fetchProperties();
@@ -159,11 +159,11 @@ const Properties = () => {
         const matchesType = filters.type === 'all' || property.property_type === filters.type;
 
         // Category filter - Fix case sensitivity issue
-        const matchesCategory = filters.category === 'all' || 
+        const matchesCategory = filters.category === 'all' ||
             property.property_for === filters.category;
 
         // Location filter - Add this filter
-        const matchesLocation = !filters.location || 
+        const matchesLocation = !filters.location ||
             property.location === filters.location;
 
         // Price filter
@@ -175,20 +175,20 @@ const Properties = () => {
             filters.bedrooms === 'any' ||
             (filters.bedrooms === '4+' && property.bedrooms >= 4) ||
             property.bedrooms === Number(filters.bedrooms);
-            
+
         // Bathrooms filter
         const matchesBathrooms =
             filters.bathrooms === 'any' ||
             (filters.bathrooms === '4+' && property.bathrooms >= 4) ||
             property.bathrooms === Number(filters.bathrooms);
-            
+
         // Status filter
         const matchesStatus = filters.status === 'all' || property.status === filters.status;
-        
+
         // Area filter
         const aboveMinArea = !filters.area_min || property.area >= Number(filters.area_min);
         const belowMaxArea = !filters.area_max || property.area <= Number(filters.area_max);
-        
+
         // Year built filter
         const aboveMinYear = !filters.year_built_min || property.year_built >= Number(filters.year_built_min);
         const belowMaxYear = !filters.year_built_max || property.year_built <= Number(filters.year_built_max);
@@ -197,7 +197,7 @@ const Properties = () => {
         const matchesFeatured = !filters.featured || property.featured;
 
         return matchesSearch && matchesType && matchesCategory && matchesLocation &&
-            aboveMinPrice && belowMaxPrice && 
+            aboveMinPrice && belowMaxPrice &&
             matchesBedrooms && matchesBathrooms && matchesStatus &&
             aboveMinArea && belowMaxArea &&
             aboveMinYear && belowMaxYear &&
@@ -396,7 +396,7 @@ const Properties = () => {
                             <option value="4+">4+</option>
                         </select>
                     </div>
-                    
+
                     <div className="filter-group">
                         <label>Bathrooms</label>
                         <select
@@ -413,7 +413,7 @@ const Properties = () => {
                             <option value="4+">4+</option>
                         </select>
                     </div>
-                    
+
                     <div className="filter-group">
                         <label>Status</label>
                         <select
@@ -429,7 +429,7 @@ const Properties = () => {
                             ))}
                         </select>
                     </div>
-                    
+
                     <div className="filter-group">
                         <label>Area (sq ft)</label>
                         <div className="price-inputs">
@@ -450,7 +450,7 @@ const Properties = () => {
                             />
                         </div>
                     </div>
-                    
+
                     <div className="filter-group">
                         <label>Year Built</label>
                         <div className="price-inputs">
@@ -471,7 +471,7 @@ const Properties = () => {
                             />
                         </div>
                     </div>
-                    
+
                     <div className="filter-group">
                         <label>Location</label>
                         <select
@@ -537,8 +537,8 @@ const Properties = () => {
                                             src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914"
                                             alt={property.name}
                                         />
-                                        <span className="property-status">{property.status}</span>
-                                        <span className="property-for">{property.property_for}</span>
+                                        <span className={`property-status ${property.status?.toLowerCase()}`}>{property.status}</span>
+                                        <span className={`property-for ${property.property_for?.toLowerCase()}`}>{property.property_for}</span>
                                     </div>
 
                                     <div className="property-details">
@@ -558,7 +558,7 @@ const Properties = () => {
                                         </div>
                                         <p className="property-type">{property.property_type}</p>
                                         <div className="property-footer">
-                                            <span className="property-agent">{property.contact_agent}</span>
+                                            {/* <span className="property-agent">{property.contact_agent}</span> */}
                                             <span className="property-year">Built: {property.year_built}</span>
                                         </div>
                                     </div>
@@ -635,7 +635,7 @@ const Properties = () => {
 
                                     <div className="modal-feature">
                                         <span className="feature-label">Status</span>
-                                        <span className="feature-value status-badge">
+                                        <span className={`feature-value status-badge ${selectedProperty.status?.toLowerCase()}`}>
                                             {selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
                                         </span>
                                     </div>
@@ -678,15 +678,24 @@ const Properties = () => {
                                     </ul>
                                 </div>
 
-                                <div className="modal-agent">
+                                {/* <div className="modal-agent">
                                     <h3>Listed By</h3>
                                     <p>{selectedProperty.contact_agent}</p>
-                                </div>
+                                </div> */}
 
                                 <div className="modal-actions">
-                                    <button className="contact-agent-btn">Contact Agent</button>
-                                    <button className="schedule-viewing-btn">Schedule Viewing</button>
-                                    <button 
+                                    <button
+                                        className="schedule-viewing-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation(); // Prevent closing the modal
+                                            // Navigate to Schedule page and store the property ID to open the new visit modal
+                                            localStorage.setItem('schedulePropertyId', selectedProperty.property_id);
+                                            window.location.href = '/dashboard/schedule';
+                                        }}
+                                    >
+                                        Schedule Viewing
+                                    </button>
+                                    <button
                                         className="edit-property-btn"
                                         onClick={(e) => {
                                             e.stopPropagation(); // Prevent closing the modal

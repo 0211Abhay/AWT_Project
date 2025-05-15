@@ -26,20 +26,63 @@ export const AuthProvider = ({ children }) => {
 
     // Check session status on mount
     useEffect(() => {
+        // Clear all localStorage items on initial load
+        const storedItems = Object.keys(localStorage);
+        if (storedItems.includes('activeSection') ||
+            storedItems.includes('email') ||
+            storedItems.includes('theme') ||
+            storedItems.includes('token') ||
+            storedItems.includes('user')) {
+            localStorage.clear();
+        }
         checkSession();
     }, []);
 
     const checkSession = async () => {
         try {
             const response = await api.get('/auth/check');
+            console.log('Session check response:', response.data);
+
             if (response.data.authenticated) {
-                setBroker(response.data.broker);
+                const brokerData = response.data.broker;
+                console.log('Authenticated broker data:', brokerData);
+                setBroker(brokerData);
+
+                // Store broker ID in local storage - handle different possible structures
+                if (brokerData) {
+                    // Try to get ID from different possible properties
+                    const brokerId = brokerData._id || brokerData.id || brokerData.broker_id;
+                    const brokerName = brokerData.name || brokerData.fullName || brokerData.username || '';
+                    const brokerEmail = brokerData.email || '';
+
+                    console.log('Storing broker info:', { brokerId, brokerName, brokerEmail });
+
+                    if (brokerId) {
+                        localStorage.setItem('brokerId', brokerId);
+                        localStorage.setItem('brokerName', brokerName);
+
+
+                        console.log('Verification - stored in localStorage:', {
+                            brokerId: localStorage.getItem('brokerId'),
+                            brokerName: localStorage.getItem('brokerName')
+                        });
+                    } else {
+                        console.warn('No broker ID found in authenticated response');
+                    }
+                }
             } else {
+                console.log('Not authenticated, clearing broker data');
                 setBroker(null);
+                localStorage.removeItem('brokerId');
+                localStorage.removeItem('brokerName');
+
             }
         } catch (error) {
             console.error('Session check error:', error);
             setBroker(null);
+            localStorage.removeItem('brokerId');
+            localStorage.removeItem('brokerName');
+
         } finally {
             setLoading(false);
         }
@@ -47,12 +90,51 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password, rememberMe) => {
         try {
+            console.log('Login attempt - clearing localStorage');
+            // Clear all existing localStorage items before logging in
+            localStorage.clear();
+
             const response = await api.post('/auth/login', {
                 email,
                 password,
                 rememberMe
             });
-            setBroker(response.data.broker);
+
+            console.log('Login response:', response.data);
+
+            // Extract broker data from response
+            const brokerData = response.data.broker || response.data.user || response.data;
+            console.log('Extracted broker data:', brokerData);
+
+            // Set broker in state
+            setBroker(brokerData);
+
+            // Store broker info in localStorage - handle different possible structures
+            if (brokerData) {
+                // Try to get ID from different possible properties
+                const brokerId = brokerData._id || brokerData.id || brokerData.broker_id;
+                const brokerName = brokerData.name || brokerData.fullName || brokerData.username || '';
+                const brokerEmail = brokerData.email || '';
+
+                console.log('Extracted broker info:', { brokerId, brokerName, brokerEmail });
+
+                if (brokerId) {
+                    // Store broker information
+                    localStorage.setItem('brokerId', brokerId);
+                    localStorage.setItem('brokerName', brokerName);
+
+                    // Verify storage was successful
+                    console.log('Verification - stored in localStorage:', {
+                        brokerId: localStorage.getItem('brokerId'),
+                        brokerName: localStorage.getItem('brokerName'),
+                    });
+                } else {
+                    console.warn('No broker ID found in response');
+                }
+            } else {
+                console.warn('No broker data found in response');
+            }
+
             return { success: true };
         } catch (error) {
             console.error('Login error:', error);
@@ -67,6 +149,10 @@ export const AuthProvider = ({ children }) => {
         try {
             await api.post('/auth/logout');
             setBroker(null);
+
+            // Clear all localStorage items on logout
+            localStorage.clear();
+
             return { success: true };
         } catch (error) {
             console.error('Logout error:', error);
