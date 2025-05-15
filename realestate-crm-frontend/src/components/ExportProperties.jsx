@@ -3,21 +3,51 @@ import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-const ExportProperties = () => {
+const ExportProperties = ({ brokerId }) => {
   const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Fetch data on component mount
+  // Fetch data on component mount or when brokerId changes
   useEffect(() => {
-    axios.get('http://localhost:5001/api/property/getAllProperty')
+    setLoading(true);
+    
+    // If broker ID is provided, use broker-specific endpoint
+    const endpoint = brokerId 
+      ? `http://localhost:5001/api/property/getPropertiesByBroker/${brokerId}`
+      : 'http://localhost:5001/api/property/getAllProperty';
+      
+    console.log(`Exporting properties from endpoint: ${endpoint}`);
+    
+    axios.get(endpoint)
       .then(res => {
-        const formatted = res.data.properties.map((property) => ({
+        // Handle different response structures
+        const propertiesData = res.data.properties || res.data;
+        
+        // Make sure propertiesData is an array
+        if (!Array.isArray(propertiesData)) {
+          throw new Error('Invalid data format received from server');
+        }
+        
+        const formatted = propertiesData.map((property) => ({
           ...property,
-          amenities: JSON.parse(property.amenities).join(', ') // Convert JSON string to readable text
+          amenities: property.amenities ? 
+            (typeof property.amenities === 'string' ? 
+              JSON.parse(property.amenities).join(', ') : 
+              Array.isArray(property.amenities) ? 
+                property.amenities.join(', ') : 
+                property.amenities)
+            : ''
         }));
         setProperties(formatted);
+        setLoading(false);
       })
-      .catch(err => console.error('Error fetching properties:', err));
-  }, []);
+      .catch(err => {
+        console.error('Error fetching properties:', err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [brokerId]);
 
   // Function to export data
   const handleExportClick = () => {
@@ -30,12 +60,15 @@ const ExportProperties = () => {
     saveAs(blob, "properties.xlsx");
   };
 
-  return (
-    <div>
-      <h2>Property Export</h2>
-      <button onClick={handleExportClick}>Export Properties to Excel</button>
-    </div>
-  );
+  // Auto-export on successful data fetch
+  useEffect(() => {
+    if (!loading && !error && properties.length > 0) {
+      handleExportClick();
+    }
+  }, [properties, loading, error]);
+
+  // Component doesn't render UI - it just triggers the export
+  return null;
 };
 
 export default ExportProperties;

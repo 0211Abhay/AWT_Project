@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FaFileExport } from 'react-icons/fa';
+import ExportClients from '../ExportClients';
 
 import "../../style/Clients.css"
 
@@ -11,6 +13,7 @@ const Client = () => {
     const [isEditingClient, setIsEditingClient] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [isExporting, setIsExporting] = useState(false);
     const [selectedClient, setSelectedClient] = useState(null);
     const [clientSchedules, setClientSchedules] = useState([]);
     const [clientProperties, setClientProperties] = useState([]);
@@ -71,12 +74,12 @@ const Client = () => {
                 const rentalRes = await axios.get(`http://localhost:5001/api/rental/getRentalsByClient/${clientId}`);
                 if (rentalRes.data && rentalRes.data.rentals) {
                     console.log('Fetched rentals:', rentalRes.data.rentals);
-                    
+
                     // Format the rental data similar to how it's done in Rental.jsx
                     const formattedRentals = rentalRes.data.rentals.map(rental => {
                         // Get property name
                         const property = rental.property ? rental.property.name : 'Unknown Property';
-                        
+
                         return {
                             id: rental.rental_id,
                             property: property,
@@ -89,20 +92,29 @@ const Client = () => {
                             notes: rental.notes || ''
                         };
                     });
-                    
+
                     setClientRentals(formattedRentals);
-                    
-                    // Fetch paid payments for these rentals
+
+                    // Fetch paid payments for these rentals filtered by broker ID
                     try {
-                        const paidPaymentsResponse = await axios.get('http://localhost:5001/api/payment/getAllPaidPayments');
-                        const fetchedPaidPayments = paidPaymentsResponse.data?.payments || [];
+                        // Get current broker ID from localStorage
+                        const brokerId = localStorage.getItem('brokerId');
+                        if (!brokerId) {
+                            console.error('No broker ID found in localStorage for payments');
+                            setPaidPayments([]);
+                            return;
+                        }
                         
+                        // Use the new endpoint with broker ID parameter
+                        const paidPaymentsResponse = await axios.get(`http://localhost:5001/api/payment/getAllPaidPayments/${brokerId}`);
+                        const fetchedPaidPayments = paidPaymentsResponse.data?.payments || [];
+
                         // Filter to get only payments relevant to this client's rentals
                         const clientRentalIds = formattedRentals.map(r => r.id);
-                        const clientPaidPayments = fetchedPaidPayments.filter(payment => 
+                        const clientPaidPayments = fetchedPaidPayments.filter(payment =>
                             clientRentalIds.includes(payment.rental_id)
                         );
-                        
+
                         setPaidPayments(clientPaidPayments);
                         console.log('Filtered paid payments for client rentals:', clientPaidPayments);
                     } catch (paymentError) {
@@ -132,25 +144,38 @@ const Client = () => {
         setIsProfileModalOpen(true);
         await fetchClientDetails(client.id);
     };
+    // Helper function to process client data from API response
+    const processClientData = (data) => {
+        setClients(data.map(client => ({
+            id: client.client_id,
+            name: client.name,
+            email: client.email,
+            phone: client.phone,
+            address: client.address || '',
+            joinDate: client.created_at
+        })));
+    };
+
     const fetchClients = async () => {
         setLoading(true);
         try {
-            const response = await fetch("http://localhost:5001/api/client/getAllClient");
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.details || "Failed to fetch clients");
+            // Get broker ID directly from localStorage
+            const brokerId = localStorage.getItem('brokerId');
+            console.log('Using broker ID from localStorage:', brokerId);
+
+            // Ensure broker ID is available
+            if (!brokerId) {
+                throw new Error('Broker ID not found. Please log in again.');
             }
 
-            const data = await response.json();
-            console.log('Received client data:', data);
-            setClients(data.map(client => ({
-                id: client.client_id,
-                name: client.name,
-                email: client.email,
-                phone: client.phone,
-                address: client.address || '',
-                joinDate: client.created_at
-            })));
+            // Use the broker-specific endpoint with the broker ID
+            const response = await axios.post('http://localhost:5001/api/client/getClientsByBroker', {
+                broker_id: brokerId
+            });
+
+            console.log('Received client data for broker ID', brokerId, ':', response.data);
+            processClientData(response.data);
+
         } catch (error) {
             console.error("Error fetching clients:", error);
             setError(error.message);
@@ -171,11 +196,20 @@ const Client = () => {
         }
 
         try {
+            // Get broker ID directly from localStorage - use the same method as fetchClients
+            const brokerId = localStorage.getItem('brokerId');
+            console.log('Using broker ID for client creation:', brokerId);
+
+            // Ensure broker ID is available
+            if (!brokerId) {
+                throw new Error('Broker ID not found. Please log in again.');
+            }
+            
             const response = await fetch('http://localhost:5001/api/client/createClient', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    broker_id: localStorage.getItem('brokerId'),
+                    broker_id: brokerId,
                     ...currentClient
                 })
             });
@@ -288,6 +322,30 @@ const Client = () => {
                 >
                     Add New Client
                 </button>
+                <button
+                    onClick={() => {
+                        // Get broker ID from localStorage
+                        const brokerId = localStorage.getItem('brokerId');
+                        if (!brokerId) {
+                            alert('Error: Broker ID not found. Please log in again.');
+                            return;
+                        }
+                        
+                        // Activate export component
+                        setIsExporting(true);
+                        setTimeout(() => setIsExporting(false), 3000); // Reset after 3 seconds
+                        
+                        // Show feedback to user
+                        alert('Exporting clients to Excel...');
+                    }}
+                    className="export-btn"
+                    aria-label="Export Clients"
+                >
+                    <FaFileExport /> Export
+                </button>
+                
+                {/* Export component - only rendered when exporting is active */}
+                {isExporting && <ExportClients brokerId={localStorage.getItem('brokerId')} />}
             </div>
 
             {error && (
@@ -412,7 +470,7 @@ const Client = () => {
                     </div>
                 </div>
             )}
-            
+
             {/* Client Profile Modal */}
             {isProfileModalOpen && selectedClient && (
                 <div className="client-profile-modal-overlay">
@@ -473,7 +531,7 @@ const Client = () => {
                                         <p className="no-data">No scheduled visits found</p>
                                     )}
                                 </div>
-                                
+
                                 <div className="rentals-section">
                                     <h3>Rental Properties</h3>
                                     {clientRentals.length > 0 ? (
@@ -491,7 +549,7 @@ const Client = () => {
                                                     <span>{new Date(rental.start_date).toLocaleDateString()}</span>
                                                     <span>{new Date(rental.end_date).toLocaleDateString()}</span>
                                                     <span>${rental.amount.toFixed(2)}</span>
-                                                    <button 
+                                                    <button
                                                         className="view-details-btn"
                                                         onClick={() => {
                                                             setSelectedRental(rental);
@@ -571,57 +629,94 @@ const Client = () => {
         </div>
     );
 
-    // Function to generate payment months display
+    // Function to generate payment months display - identical to Rental.jsx logic
     function generatePaymentMonths(rental) {
-        // Get the start and end dates
+        if (!rental || !rental.start_date || !rental.end_date) return [];
+
         const startDate = new Date(rental.start_date);
         const endDate = new Date(rental.end_date);
-        
-        // Create a list of all months in the rental period
+
+        // Calculate total months between start and end dates - same as in Rental.jsx
+        const totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+            (endDate.getMonth() - startDate.getMonth()) + 1;
+
         const months = [];
-        let currentDate = new Date(startDate);
-        
-        while (currentDate <= endDate) {
-            const month = currentDate.getMonth();
-            const year = currentDate.getFullYear();
-            
-            // Check if this month has a paid payment
-            const isPaid = paidPayments.some(payment => {
-                const paymentDate = new Date(payment.payment_date);
-                return payment.rental_id === rental.id && 
-                       paymentDate.getMonth() === month && 
-                       paymentDate.getFullYear() === year;
-            });
-            
-            // Determine status based on current date
-            let status;
-            const today = new Date();
-            
-            // Properly compare the dates to fix the issue with future months showing as overdue
-            if (isPaid) {
-                status = 'paid';
-            } else if (year < today.getFullYear() || 
-                      (year === today.getFullYear() && month < today.getMonth())) {
-                // Past month (previous year or earlier month in current year)
+
+        for (let i = 0; i < totalMonths; i++) {
+            // Create payment date for this month - exact same logic as Rental.jsx
+            const paymentDate = new Date(startDate);
+            paymentDate.setMonth(startDate.getMonth() + i);
+
+            // Create payment end date (last day of month) - exact same logic as Rental.jsx
+            const paymentEndDate = new Date(paymentDate);
+            paymentEndDate.setMonth(paymentDate.getMonth() + 1);
+            paymentEndDate.setDate(paymentEndDate.getDate() - 1);
+
+            // Determine payment status based on current date - exact same logic as Rental.jsx
+            const currentDate = new Date();
+            let status = 'pending';
+
+            if (paymentEndDate < currentDate) {
                 status = 'overdue';
-            } else if (year === today.getFullYear() && month === today.getMonth()) {
-                // Current month
+            } else if (paymentDate <= currentDate && paymentEndDate >= currentDate) {
                 status = 'due';
             } else {
-                // Future month
                 status = 'upcoming';
             }
-            
+
+            // Check if this month has a paid payment by carefully checking the rent_payments table
+            const isPaid = paidPayments.some(payment => {
+                if (!payment) return false;
+
+                // IMPORTANT: Check the due_date which represents which month's payment was for
+                if (payment.due_date) {
+                    // The due_date in rent_payments table shows which month the payment was for
+                    const dueDate = new Date(payment.due_date);
+                    return payment.rental_id === rental.id &&
+                        dueDate.getMonth() === paymentDate.getMonth() &&
+                        dueDate.getFullYear() === paymentDate.getFullYear();
+                }
+
+                // Check payment_for_month field if available (from our latest update)
+                if (payment.payment_for_month) {
+                    const paymentForDate = new Date(payment.payment_for_month);
+                    return payment.rental_id === rental.id &&
+                        paymentForDate.getMonth() === paymentDate.getMonth() &&
+                        paymentForDate.getFullYear() === paymentDate.getFullYear();
+                }
+
+                // Last fallback: check if the month string matches
+                if (payment.month && typeof payment.month === 'string') {
+                    // Try to extract month and year from payment.month (e.g., "May 2025")
+                    const parts = payment.month.split(' ');
+                    if (parts.length === 2) {
+                        const [monthName, yearStr] = parts;
+                        const paymentYear = parseInt(yearStr);
+                        const currentMonthName = paymentDate.toLocaleString('default', { month: 'long' });
+                        return payment.rental_id === rental.id &&
+                            monthName === currentMonthName &&
+                            paymentYear === paymentDate.getFullYear();
+                    }
+                }
+
+                return false;
+            });
+
+            // If payment exists in database, override status to 'paid'
+            if (isPaid) {
+                status = 'paid';
+            }
+
+            // Format month name - same as Rental.jsx
+            const monthName = paymentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
             months.push({
-                month: currentDate.toLocaleString('default', { month: 'long' }),
-                year: year,
+                month: monthName.split(' ')[0], // Just the month name
+                year: paymentDate.getFullYear(),
                 status: status
             });
-            
-            // Move to next month
-            currentDate.setMonth(currentDate.getMonth() + 1);
         }
-        
+
         return (
             <div className="month-grid">
                 {months.map((monthData, index) => (

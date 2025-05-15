@@ -31,7 +31,6 @@ exports.getAllClients = async (req, res) => {
     }
 };
 
-
 // Get a single client by ID
 exports.getClientById = async (req, res) => {
     try {

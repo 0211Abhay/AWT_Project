@@ -1,4 +1,5 @@
 const { Rental, Property, Client, Broker } = require('../models');
+const { Op } = require('sequelize');
 
 exports.createRental = async (req, res) => {
     try {
@@ -34,6 +35,38 @@ exports.createRental = async (req, res) => {
         const broker = await Broker.findByPk(broker_id);
         if (!broker) {
             return res.status(404).json({ error: 'Broker not found' });
+        }
+        
+        // Check for redundancy - if the same client has already rented during the overlapping period
+        const overlappingRentals = await Rental.findAll({
+            where: {
+                client_id,
+                [Op.or]: [
+                    // Case 1: New rental starts during an existing rental
+                    {
+                        start_date: { [Op.lte]: start_date },
+                        end_date: { [Op.gte]: start_date }
+                    },
+                    // Case 2: New rental ends during an existing rental
+                    {
+                        start_date: { [Op.lte]: end_date },
+                        end_date: { [Op.gte]: end_date }
+                    },
+                    // Case 3: New rental encompasses an existing rental
+                    {
+                        start_date: { [Op.gte]: start_date },
+                        end_date: { [Op.lte]: end_date }
+                    }
+                ]
+            }
+        });
+        
+        if (overlappingRentals.length > 0) {
+            return res.status(400).json({
+                error: 'Redundant rental entry',
+                message: 'This client already has a rental agreement that overlaps with the specified dates.',
+                details: 'Please check the client\'s existing rentals and choose different dates.'
+            });
         }
 
         // Create rental record

@@ -6,7 +6,9 @@ import {
     Calendar,
     UserCog,
     Building,
-    LogOut
+    LogOut,
+    Menu,
+    X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import './Navbar.css';
@@ -14,9 +16,11 @@ import './Navbar.css';
 const Navbar = ({ activeSection, onNavigate }) => {
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
     const { broker, logout } = useAuth();
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
     const navItems = [
         { name: 'clients', icon: <Users size={18} />, requiresAuth: true },
@@ -41,6 +45,19 @@ const Navbar = ({ activeSection, onNavigate }) => {
         window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, [lastScrollY]);
+    
+    // Handle window resize
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowWidth(window.innerWidth);
+            if (window.innerWidth > 768) {
+                setIsMobileMenuOpen(false);
+            }
+        };
+        
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleLogout = async () => {
         const result = await logout();
@@ -57,22 +74,38 @@ const Navbar = ({ activeSection, onNavigate }) => {
         if (onNavigate) {
             onNavigate(name);
         }
+        setIsMobileMenuOpen(false); // Close mobile menu on navigation
+    };
+    
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
     };
 
     return (
-        <nav className={`navbar ${!isVisible ? 'navbar-hidden' : ''}`}>
+        <nav className={`navbar ${!isVisible ? 'navbar-hidden' : ''} ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
             <div className="navbar-container">
                 <Link to="/" className="navbar-logo">
                     Estatemate
                 </Link>
+                
+                {windowWidth <= 576 && (
+                    <button 
+                        className="mobile-nav-toggle" 
+                        onClick={toggleMobileMenu}
+                        aria-label="Toggle mobile menu"
+                    >
+                        {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                    </button>
+                )}
 
-                <div className="nav-items">
+                <div className={`nav-items ${isMobileMenuOpen ? 'mobile-menu-visible' : ''}`}>
                     {navItems.map(({ name, icon, requiresAuth }) => (
                         (!requiresAuth || broker) && (
                             <button
                                 key={name}
                                 className={`nav-button ${activeSection === name ? 'active' : ''}`}
                                 onClick={() => handleNavClick(name)}
+                                aria-label={name}
                             >
                                 {icon}
                                 <span className="nav-text">
@@ -83,12 +116,12 @@ const Navbar = ({ activeSection, onNavigate }) => {
                     ))}
 
                     {!broker ? (
-                        <Link to="/login" className="nav-button login-button">
+                        <Link to="/login" className="nav-button login-button" aria-label="Login">
                             <UserCog size={18} />
                             <span className="nav-text">Login</span>
                         </Link>
                     ) : (
-                        <button onClick={handleLogout} className="nav-button logout-button">
+                        <button onClick={handleLogout} className="nav-button logout-button" aria-label="Logout">
                             <LogOut size={18} />
                             <span className="nav-text">Logout</span>
                         </button>
