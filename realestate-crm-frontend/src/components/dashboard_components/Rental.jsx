@@ -1,5 +1,3 @@
-// import './Dashboard.css';
-import './Rental.css';
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle, XCircle, Upload, FileText, Search, Bell, DollarSign, Clock, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
@@ -624,7 +622,10 @@ const Rental = () => {
                 payment_date: new Date().toISOString().split('T')[0],
                 amount: payment.amount,
                 month: payment.month,
-                due_date: payment.due_date
+                due_date: payment.due_date,
+                payment_for_month: payment.start_date,
+                payment_period_end: payment.end_date,
+                payment_period_display: payment.month
             };
 
             // Save payment to the database
@@ -660,7 +661,13 @@ const Rental = () => {
             }
         } catch (error) {
             console.error('Error recording payment:', error);
-            alert('Failed to record payment: ' + (error.response?.data?.error || error.message));
+            
+            // Handle specific error cases for duplicate payments
+            if (error.response?.data?.error === 'Duplicate payment') {
+                alert(`${error.response.data.message}\n${error.response.data.details}`);
+            } else {
+                alert('Failed to record payment: ' + (error.response?.data?.error || error.message));
+            }
         }
     };
 
@@ -705,9 +712,8 @@ const Rental = () => {
             // Show loading state
             setLoadingData(true);
 
-            // Send data to the backend API
             const response = await axios.post('http://localhost:5001/api/rental/createRental', rentalData);
-
+            
             // If successful, refresh the rentals data to show the new entry
             if (response.data && response.data.rental) {
                 // Create a new rental entry for the Rent Payment section
@@ -755,7 +761,13 @@ const Rental = () => {
             }
         } catch (error) {
             console.error('Error adding rental:', error);
-            alert('Failed to add rental agreement: ' + (error.response?.data?.error || error.message));
+            
+            // Handle specific error cases including redundancy check
+            if (error.response?.data?.error === 'Redundant rental entry') {
+                alert(`${error.response.data.message}\n${error.response.data.details}`);
+            } else {
+                alert('Failed to add rental agreement: ' + (error.response?.data?.error || error.message));
+            }
         } finally {
             setLoadingData(false);
         }
@@ -1015,11 +1027,11 @@ const Rental = () => {
                                             key={rental.id}
                                             onClick={() => handlePropertySelect(rental)}
                                             className={rental.isPaidFromTable ? 'from-database' : ''}>
-                                            <td>{rental.property}</td>
-                                            <td>{rental.tenant}</td>
-                                            <td>{formatDate(rental.dueDate)}</td>
-                                            <td>${(rental.amount || 0).toLocaleString()}</td>
-                                            <td>
+                                            <td data-label="Property">{rental.property}</td>
+                                            <td data-label="Tenant">{rental.tenant}</td>
+                                            <td data-label="Due Date">{formatDate(rental.dueDate)}</td>
+                                            <td data-label="Amount">${(rental.amount || 0).toLocaleString()}</td>
+                                            <td data-label="Status">
                                                 <span className={`status-badge ${getStatusClass(rental.status)}`}>
                                                     {rental.status === 'paid' && <CheckCircle size={14} />}
                                                     {rental.status === 'due' && <Clock size={14} />}
@@ -1032,7 +1044,7 @@ const Rental = () => {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td>
+                                            <td data-label="Actions">
                                                 {!rental.isPaidFromTable ? (
                                                     <>
                                                         <button
@@ -1084,40 +1096,48 @@ const Rental = () => {
                                 alignItems: 'center',
                                 zIndex: 1000
                             }}>
-                                <div className="modal-content" style={{
-                                    backgroundColor: 'white',
-                                    borderRadius: '8px',
-                                    padding: '20px',
-                                    width: '800px',
-                                    maxHeight: '80vh',
+                                <div className="payment-details-modal" style={{
+                                    position: 'relative',
+                                    width: '90%',
+                                    maxWidth: '800px',
+                                    maxHeight: '90vh',
                                     overflowY: 'auto',
-                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
+                                    backgroundColor: 'white',
+                                    padding: '20px',
+                                    boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                                    borderRadius: '5px',
+                                    zIndex: 1001
                                 }}>
                                     <div className="modal-header" style={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
-                                        marginBottom: '15px',
-                                        position: 'sticky',
-                                        top: 0,
-                                        backgroundColor: 'white',
-                                        zIndex: 1
+                                        marginBottom: '20px',
+                                        borderBottom: '1px solid #eee',
+                                        paddingBottom: '10px',
+                                        position: 'relative'
                                     }}>
-                                        <h3 style={{ color: "black" }}>Monthly Payment Details</h3>
+                                        <h3 style={{ margin: 0, padding: 0 }}>Monthly Payment Details</h3>
                                         <button
                                             onClick={() => setSelectedRental(null)}
                                             style={{
                                                 background: 'none',
                                                 border: 'none',
                                                 fontSize: '24px',
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                position: 'absolute',
+                                                right: '0',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                padding: '0 5px',
+                                                margin: 0,
+                                                lineHeight: 1
                                             }}
-                                        >×</button>
+                                        >&times;</button>
                                     </div>
 
                                     <div style={{ marginBottom: '20px' }}>
-
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: '10px', gap: '10px' }}>
                                             <div>
                                                 <p><strong>Property:</strong> {selectedRental.property}</p>
                                                 <p><strong>Tenant:</strong> {selectedRental.tenant}</p>
@@ -1132,7 +1152,7 @@ const Rental = () => {
                                     </div>
 
                                     <div className="monthly-payments-table" style={{ width: '100%' }}>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <table className="data-table responsive-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                             <thead>
                                                 <tr style={{ backgroundColor: '#f5f5f5' }}>
                                                     <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Month</th>
@@ -1147,11 +1167,11 @@ const Rental = () => {
                                             <tbody>
                                                 {monthlyPayments.map((payment) => (
                                                     <tr key={payment.id} style={{ borderBottom: '1px solid #ddd' }}>
-                                                        <td style={{ padding: '10px' }}>Month {payment.id}</td>
-                                                        <td style={{ padding: '10px' }}>{formatDate(payment.start_date)}</td>
-                                                        <td style={{ padding: '10px' }}>{formatDate(payment.end_date)}</td>
-                                                        <td style={{ padding: '10px' }}>${payment.amount.toLocaleString()}</td>
-                                                        <td style={{ padding: '10px' }}>
+                                                        <td data-label="Month" style={{ padding: '10px' }}>Month {payment.id}</td>
+                                                        <td data-label="Start Date" style={{ padding: '10px' }}>{formatDate(payment.start_date)}</td>
+                                                        <td data-label="End Date" style={{ padding: '10px' }}>{formatDate(payment.end_date)}</td>
+                                                        <td data-label="Amount" style={{ padding: '10px' }}>${payment.amount.toLocaleString()}</td>
+                                                        <td data-label="Status" style={{ padding: '10px' }}>
                                                             <span style={{
                                                                 padding: '4px 8px',
                                                                 borderRadius: '4px',
@@ -1166,10 +1186,10 @@ const Rental = () => {
                                                                 {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                                                             </span>
                                                         </td>
-                                                        <td style={{ padding: '10px' }}>
+                                                        <td data-label="Payment Date" style={{ padding: '10px' }}>
                                                             {payment.payment_date ? formatDate(payment.payment_date) : '-'}
                                                         </td>
-                                                        <td style={{ padding: '10px' }}>
+                                                        <td data-label="Actions" style={{ padding: '10px' }}>
                                                             {payment.status !== 'paid' && (
                                                                 <button
                                                                     onClick={() => handleMarkMonthlyPaymentAsPaid(payment)}
