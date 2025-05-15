@@ -288,7 +288,7 @@ const Rental = () => {
                     // Get current date for comparison (remove time portion for accurate date comparison)
                     const today = new Date();
                     today.setHours(0, 0, 0, 0); // Set to beginning of day for accurate comparison
-                    
+
                     // Parse the due date and normalize it as well
                     const dueDate = new Date(rental.end_date);
                     dueDate.setHours(0, 0, 0, 0);
@@ -303,7 +303,7 @@ const Rental = () => {
                     // Overdue: Payment due date is more than 7 days past
                     // Paid: Payments that have already been paid
                     let status;
-                    
+
                     if (hasPaidPayment) {
                         // Skip rentals that have been paid (they'll be in the paidPayments list)
                         status = 'paid';
@@ -311,9 +311,9 @@ const Rental = () => {
                         // Calculate the difference in days between today and the due date
                         const diffTime = dueDate.getTime() - today.getTime();
                         const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
-                        
+
                         console.log(`Rental ${rental.rental_id}: Due in ${diffDays} days`);
-                        
+
                         if (diffDays < -7) {
                             // More than 7 days past due date - mark as overdue
                             status = 'overdue';
@@ -322,7 +322,7 @@ const Rental = () => {
                             // Any other payment not overdue - mark as due
                             // This includes payments due soon and payments due in the future
                             status = 'due';
-                            console.log(`Due rental: ${rental.rental_id} (Due ${diffDays < 0 ? 'was ' + Math.abs(diffDays) + ' days ago' : 'in ' + diffDays + ' days'})`); 
+                            console.log(`Due rental: ${rental.rental_id} (Due ${diffDays < 0 ? 'was ' + Math.abs(diffDays) + ' days ago' : 'in ' + diffDays + ' days'})`);
                         }
                     }
 
@@ -349,7 +349,7 @@ const Rental = () => {
                 const paidCount = fetchedPaidPayments.length; // Count directly from the rent_payments table
                 const dueCount = formattedRentals.filter(r => r.status === 'due').length;
                 const overdueCount = formattedRentals.filter(r => r.status === 'overdue').length;
-                
+
                 // Count leases expiring within 30 days
                 const expiringLeases = formattedRentals.filter(r => {
                     const today = new Date();
@@ -359,14 +359,14 @@ const Rental = () => {
                     const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
                     return diffDays > 0 && diffDays <= 30; // Leases expiring within 30 days
                 }).length;
-                
+
                 setDashboardMetrics({
                     activeRentals: dueCount + overdueCount, // Only due and overdue are considered active
                     paidRentals: paidCount,
                     overduePayments: overdueCount,
                     expiringLeases
                 });
-                
+
                 console.log('Dashboard metrics updated:', {
                     activeRentals: dueCount + overdueCount,
                     paidRentals: paidCount,
@@ -416,13 +416,13 @@ const Rental = () => {
     // Count rentals in each category for debugging
     const dueRentals = rentals.filter(r => r.status === 'due');
     const overdueRentals = rentals.filter(r => r.status === 'overdue');
-    
+
     console.log('Rental counts by status:');
     console.log('- Due:', dueRentals.length);
     console.log('- Overdue:', overdueRentals.length);
     console.log('- Paid:', paidPayments.length);
     console.log('Current filter selected:', filterStatus);
-    
+
     // Filtered rentals based on status and search criteria
     const filteredRentals = filterStatus === 'paid'
         ? getPaidRentalRecords().filter(rental => {
@@ -432,28 +432,43 @@ const Rental = () => {
             return matchesSearch;
         })
         : filterStatus === 'due'
-        ? rentals.filter(rental => {
-            // For due status, filter rentals marked as due
-            const isDue = rental.status === 'due';
-            const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
-            return isDue && matchesSearch;
-        })
-        : filterStatus === 'overdue'
-        ? rentals.filter(rental => {
-            // For overdue status, filter rentals marked as overdue
-            const isOverdue = rental.status === 'overdue';
-            const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
-            return isOverdue && matchesSearch;
-        })
-        // Upcoming filter removed
-        : rentals.filter(rental => {
-            // For 'all' status, show everything except paid (which come from a different list)
-            const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesSearch;
-        });
+            ? rentals.filter(rental => {
+                // For due status, filter rentals marked as due
+                const isDue = rental.status === 'due';
+                const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
+                return isDue && matchesSearch;
+            })
+            : filterStatus === 'overdue'
+                ? rentals.filter(rental => {
+                    // For overdue status, filter rentals with overdue status
+                    // We use the same logic that marks a rental as overdue
+                    let isOverdue = rental.status === 'overdue';
+
+                    // If a rental has an end_date that's more than 7 days past, it should show in overdue
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    const dueDate = new Date(rental.end_date);
+                    dueDate.setHours(0, 0, 0, 0);
+
+                    const diffTime = dueDate.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
+
+                    // If diffDays < -7, the rental is more than 7 days past due
+                    isOverdue = isOverdue || diffDays < -7;
+
+                    const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
+                    return isOverdue && matchesSearch;
+                })
+                // All status - show everything except paid
+                : rentals.filter(rental => {
+                    // For 'all' status, show everything except paid (which come from a different list)
+                    const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
+                    return matchesSearch;
+                });
 
     // Function to get status class for styling
     const getStatusClass = (status) => {
@@ -474,7 +489,7 @@ const Rental = () => {
                 return '';
         }
     };
-    
+
     // Function to format date
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -1056,7 +1071,6 @@ const Rental = () => {
                             </table>
                         </div>
 
-                        {/* Monthly Payment Details Modal */}
                         {selectedRental && (
                             <div className="modal-overlay" style={{
                                 position: 'fixed',
@@ -1074,7 +1088,7 @@ const Rental = () => {
                                     backgroundColor: 'white',
                                     borderRadius: '8px',
                                     padding: '20px',
-                                    width: '700px',
+                                    width: '800px',
                                     maxHeight: '80vh',
                                     overflowY: 'auto',
                                     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
@@ -1089,7 +1103,7 @@ const Rental = () => {
                                         backgroundColor: 'white',
                                         zIndex: 1
                                     }}>
-                                        <h3 style={{ margin: 0 }}>Monthly Payment Details</h3>
+                                        <h3 style={{ color: "black" }}>Monthly Payment Details</h3>
                                         <button
                                             onClick={() => setSelectedRental(null)}
                                             style={{
@@ -1102,6 +1116,7 @@ const Rental = () => {
                                     </div>
 
                                     <div style={{ marginBottom: '20px' }}>
+
                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                                             <div>
                                                 <p><strong>Property:</strong> {selectedRental.property}</p>
