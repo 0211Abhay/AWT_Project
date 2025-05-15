@@ -1,3 +1,5 @@
+// import './Dashboard.css';
+import './Rental.css';
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle, XCircle, Upload, FileText, Search, Bell, DollarSign, Clock, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
@@ -58,6 +60,10 @@ const Rental = () => {
                 ...prev,
                 broker_id: brokerId
             }));
+
+            // Fetch rentals when component mounts
+            fetchRentals();
+            fetchDocuments();
         } catch (error) {
             console.error('Error getting broker info from localStorage:', error);
             // Fallback to broker ID 2
@@ -163,6 +169,19 @@ const Rental = () => {
     const [rentals, setRentals] = useState([]);
     const [leases, setLeases] = useState([]);
     const [documents, setDocuments] = useState([]);
+    const [monthlyPayments, setMonthlyPayments] = useState([]);
+    const [selectedRental, setSelectedRental] = useState(null);
+
+    // State for storing paid payments from the rent_payments table
+    const [paidPayments, setPaidPayments] = useState([]);
+
+    // Dashboard metrics state
+    const [dashboardMetrics, setDashboardMetrics] = useState({
+        activeRentals: 0,
+        paidRentals: 0,
+        overduePayments: 0,
+        expiringLeases: 0
+    });
 
     // Helper function to map rental status to payment status
     const mapRentalStatusToPaymentStatus = (rentalStatus) => {
@@ -234,9 +253,8 @@ const Rental = () => {
         }
     };
 
-    // Fetch rentals and documents on component mount
+    // Fetch documents on component mount
     useEffect(() => {
-        fetchRentals();
         fetchDocuments();
     }, []);
 
@@ -245,36 +263,119 @@ const Rental = () => {
         try {
             setLoadingData(true);
             // Get broker ID from localStorage
-            const currentBrokerId = localStorage.getItem('brokerId');
+            const brokerInfo = JSON.parse(localStorage.getItem('brokerInfo')) || {};
+            const currentBrokerId = brokerInfo.brokerId || '2'; // Default to broker ID 2 if not found
 
             // Fetch rentals from the API using the broker-specific endpoint
-            const response = await axios.get(`http://localhost:5001/api/rental/getRentalsByBroker/${currentBrokerId}`);
+            const rentalResponse = await axios.get(`http://localhost:5001/api/rental/getRentalsByBroker/${currentBrokerId}`);
 
-            if (response.data && response.data.rentals) {
-                const formattedRentals = response.data.rentals.map(rental => ({
-                    id: rental.rental_id,
-                    property: rental.property ? rental.property.name : 'Unknown Property',
-                    tenant: rental.client ? rental.client.name : 'Unknown Client',
-                    dueDate: rental.end_date,
-                    amount: parseFloat(rental.rent_amount),
-                    status: mapRentalStatusToPaymentStatus(rental.status),
-                    paymentDate: rental.status === 'Completed' ? rental.updated_at : '',
-                    method: rental.status === 'Completed' ? 'Bank Transfer' : '',
-                    property_id: rental.property_id,
-                    client_id: rental.client_id,
-                    start_date: rental.start_date,
-                    end_date: rental.end_date
-                }));
+            // Fetch all paid payments directly from rent_payments table
+            const paidPaymentsResponse = await axios.get('http://localhost:5001/api/payment/getAllPaidPayments');
+            const fetchedPaidPayments = paidPaymentsResponse.data?.payments || [];
+
+            // Store the paid payments separately for the Paid section
+            setPaidPayments(fetchedPaidPayments);
+
+            if (rentalResponse.data && rentalResponse.data.rentals) {
+                // Map the rental data for the Due and Overdue sections
+                const formattedRentals = rentalResponse.data.rentals.map(rental => {
+                    // Get client name (tenant)
+                    const tenant = rental.client ? rental.client.name : 'Unknown Client';
+
+                    // Get property name
+                    const property = rental.property ? rental.property.name : 'Unknown Property';
+
+                    // Get current date for comparison (remove time portion for accurate date comparison)
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0); // Set to beginning of day for accurate comparison
+                    
+                    // Parse the due date and normalize it as well
+                    const dueDate = new Date(rental.end_date);
+                    dueDate.setHours(0, 0, 0, 0);
+
+                    // Check if this rental has a paid payment in the rent_payments table
+                    const hasPaidPayment = fetchedPaidPayments.some(payment =>
+                        payment.rental_id === rental.rental_id && payment.status.toLowerCase() === 'paid'
+                    );
+
+                    // Determine payment status based on new criteria:
+                    // Due: Payment due date is approaching (within the next 7 days)
+                    // Overdue: Payment due date is more than 7 days past
+                    // Paid: Payments that have already been paid
+                    let status;
+                    
+                    if (hasPaidPayment) {
+                        // Skip rentals that have been paid (they'll be in the paidPayments list)
+                        status = 'paid';
+                    } else {
+                        // Calculate the difference in days between today and the due date
+                        const diffTime = dueDate.getTime() - today.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
+                        
+                        console.log(`Rental ${rental.rental_id}: Due in ${diffDays} days`);
+                        
+                        if (diffDays < -7) {
+                            // More than 7 days past due date - mark as overdue
+                            status = 'overdue';
+                            console.log(`Overdue rental: ${rental.rental_id} (${Math.abs(diffDays)} days late)`);
+                        } else {
+                            // Any other payment not overdue - mark as due
+                            // This includes payments due soon and payments due in the future
+                            status = 'due';
+                            console.log(`Due rental: ${rental.rental_id} (Due ${diffDays < 0 ? 'was ' + Math.abs(diffDays) + ' days ago' : 'in ' + diffDays + ' days'})`); 
+                        }
+                    }
+
+                    return {
+                        id: rental.rental_id,
+                        property: property,
+                        tenant: tenant,
+                        dueDate: rental.end_date,
+                        amount: parseFloat(rental.rent_amount),
+                        status: status,
+                        paymentDate: status === 'paid' ? (rental.updated_at || new Date().toISOString().split('T')[0]) : '',
+                        method: status === 'paid' ? 'Bank Transfer' : '',
+                        property_id: rental.property_id,
+                        client_id: rental.client_id,
+                        start_date: rental.start_date,
+                        end_date: rental.end_date,
+                        notes: rental.notes || ''
+                    };
+                });
+
                 setRentals(formattedRentals);
 
-                const formattedLeases = response.data.rentals.map(rental => ({
-                    id: rental.rental_id,
-                    property: rental.property ? rental.property.name : 'Unknown Property',
-                    tenant: rental.client ? rental.client.name : 'Unknown Client',
-                    startDate: rental.start_date,
-                    endDate: rental.end_date,
-                    status: getLeaseStatus(rental.end_date, rental.status)
-                }));
+                // Update dashboard metrics based on our categories (Due, Overdue, Paid)
+                const paidCount = fetchedPaidPayments.length; // Count directly from the rent_payments table
+                const dueCount = formattedRentals.filter(r => r.status === 'due').length;
+                const overdueCount = formattedRentals.filter(r => r.status === 'overdue').length;
+                
+                // Count leases expiring within 30 days
+                const expiringLeases = formattedRentals.filter(r => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const endDate = new Date(r.end_date);
+                    endDate.setHours(0, 0, 0, 0);
+                    const diffDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                    return diffDays > 0 && diffDays <= 30; // Leases expiring within 30 days
+                }).length;
+                
+                setDashboardMetrics({
+                    activeRentals: dueCount + overdueCount, // Only due and overdue are considered active
+                    paidRentals: paidCount,
+                    overduePayments: overdueCount,
+                    expiringLeases
+                });
+                
+                console.log('Dashboard metrics updated:', {
+                    activeRentals: dueCount + overdueCount,
+                    paidRentals: paidCount,
+                    overduePayments: overdueCount,
+                    expiringLeases
+                });
+
+                // We'll keep this for now but will implement the lease agreement section later
+                const formattedLeases = [];
                 setLeases(formattedLeases);
             } else {
                 setRentals([]);
@@ -289,34 +390,263 @@ const Rental = () => {
             setLoadingData(false);
         }
     };
+    // Function to create rental records from the paid payments in the rent_payments table
+    const getPaidRentalRecords = () => {
+        return paidPayments.map(payment => {
+            // Find the original rental to get property and tenant info
+            const relatedRental = rentals.find(r => r.id === payment.rental_id);
 
-    // This getLeaseStatus function is now defined earlier in the component
+            return {
+                id: payment.payment_id,
+                rental_id: payment.rental_id,
+                property: relatedRental?.property || 'Unknown Property',
+                tenant: relatedRental?.tenant || 'Unknown Tenant',
+                dueDate: payment.due_date,
+                amount: parseFloat(payment.amount_paid || 0),
+                status: 'paid',
+                paymentDate: payment.payment_date,
+                method: 'Bank Transfer',
+                notes: payment.notes || '',
+                // This is from the rent_payments table
+                isPaidFromTable: true
+            };
+        });
+    };
 
-    // Filter rentals based on status and search query
-    const filteredRentals = rentals.filter(rental => {
-        const matchesStatus = filterStatus === 'all' || rental.status === filterStatus;
-        const matchesSearch = rental.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            rental.tenant.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesStatus && matchesSearch;
-    });
+    // Count rentals in each category for debugging
+    const dueRentals = rentals.filter(r => r.status === 'due');
+    const overdueRentals = rentals.filter(r => r.status === 'overdue');
+    
+    console.log('Rental counts by status:');
+    console.log('- Due:', dueRentals.length);
+    console.log('- Overdue:', overdueRentals.length);
+    console.log('- Paid:', paidPayments.length);
+    console.log('Current filter selected:', filterStatus);
+    
+    // Filtered rentals based on status and search criteria
+    const filteredRentals = filterStatus === 'paid'
+        ? getPaidRentalRecords().filter(rental => {
+            // For paid status, use records from rent_payments table
+            const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesSearch;
+        })
+        : filterStatus === 'due'
+        ? rentals.filter(rental => {
+            // For due status, filter rentals marked as due
+            const isDue = rental.status === 'due';
+            const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
+            return isDue && matchesSearch;
+        })
+        : filterStatus === 'overdue'
+        ? rentals.filter(rental => {
+            // For overdue status, filter rentals marked as overdue
+            const isOverdue = rental.status === 'overdue';
+            const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
+            return isOverdue && matchesSearch;
+        })
+        // Upcoming filter removed
+        : rentals.filter(rental => {
+            // For 'all' status, show everything except paid (which come from a different list)
+            const matchesSearch = rental.property?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                rental.tenant?.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesSearch;
+        });
 
     // Function to get status class for styling
     const getStatusClass = (status) => {
         switch (status) {
-            case 'paid': return 'status-paid';
-            case 'due': return 'status-due';
-            case 'overdue': return 'status-overdue';
-            case 'active': return 'status-active';
-            case 'expiring-soon': return 'status-expiring';
-            case 'expired': return 'status-expired';
-            default: return '';
+            case 'paid':
+                return 'status-paid';
+            case 'due':
+                return 'status-due';
+            case 'overdue':
+                return 'status-overdue';
+            case 'active':
+                return 'status-active';
+            case 'expiring-soon':
+                return 'status-expiring';
+            case 'expired':
+                return 'status-expired';
+            default:
+                return '';
         }
     };
-
+    
     // Function to format date
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'short', day: 'numeric' };
         return new Date(dateString).toLocaleDateString(undefined, options);
+    };
+
+    // Function to calculate monthly payments between start and end dates
+    const calculateMonthlyPayments = (rental) => {
+        if (!rental || !rental.start_date || !rental.end_date) return [];
+
+        const startDate = new Date(rental.start_date);
+        const endDate = new Date(rental.end_date);
+
+        // Calculate total months between start and end dates
+        const totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+            (endDate.getMonth() - startDate.getMonth()) + 1;
+
+        const payments = [];
+
+        for (let i = 0; i < totalMonths; i++) {
+            const paymentDate = new Date(startDate);
+            paymentDate.setMonth(startDate.getMonth() + i);
+
+            const paymentEndDate = new Date(paymentDate);
+            paymentEndDate.setMonth(paymentDate.getMonth() + 1);
+            paymentEndDate.setDate(paymentEndDate.getDate() - 1);
+
+            // Determine payment status based on current date
+            const currentDate = new Date();
+            let status = 'pending';
+
+            if (paymentEndDate < currentDate) {
+                status = 'overdue';
+            } else if (paymentDate <= currentDate && paymentEndDate >= currentDate) {
+                status = 'due';
+            }
+
+            // Format month name
+            const monthName = paymentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            payments.push({
+                id: i + 1,
+                rental_id: rental.id,
+                month: monthName,
+                start_date: paymentDate.toISOString().split('T')[0],
+                end_date: paymentEndDate.toISOString().split('T')[0],
+                due_date: paymentEndDate.toISOString().split('T')[0],
+                amount: rental.amount,
+                amount_due: rental.amount,
+                amount_paid: 0,
+                status: status,
+                payment_date: null
+            });
+        }
+
+        return payments;
+    };
+
+    // Function to fetch payment history from the database
+    const fetchRentalPayments = async (rentalId) => {
+        try {
+            const response = await axios.get(`http://localhost:5001/api/payment/getRentalPayments/${rentalId}`);
+            return response.data.payments || [];
+        } catch (error) {
+            console.error('Error fetching payment history:', error);
+            return [];
+        }
+    };
+
+    // Function to fetch all paid payments directly from rent_payments table
+    const fetchAllPaidPayments = async () => {
+        try {
+            const response = await axios.get('http://localhost:5001/api/payment/getAllPaidPayments');
+            return response.data.payments || [];
+        } catch (error) {
+            console.error('Error fetching paid payments:', error);
+            return [];
+        }
+    };
+
+    // Function to handle showing rental details
+    const handleShowDetails = async (rental, e) => {
+        e.stopPropagation();
+        setSelectedRental(rental);
+
+        // Calculate monthly payments
+        const calculatedPayments = calculateMonthlyPayments(rental);
+
+        try {
+            // Fetch actual payment records from the database
+            const paymentHistory = await fetchRentalPayments(rental.id);
+
+            // Update calculated payments with actual payment data from database
+            if (paymentHistory && paymentHistory.length > 0) {
+                const updatedPayments = calculatedPayments.map(payment => {
+                    // Find if this month's payment exists in the database by matching the month name
+                    const existingPayment = paymentHistory.find(p =>
+                        p.month === payment.month
+                    );
+
+                    if (existingPayment) {
+                        // Update payment with database record
+                        return {
+                            ...payment,
+                            status: existingPayment.status || 'paid',
+                            payment_date: existingPayment.payment_date,
+                            amount_paid: parseFloat(existingPayment.amount_paid) || payment.amount,
+                            payment_id: existingPayment.payment_id,
+                            notes: existingPayment.notes
+                        };
+                    }
+
+                    return payment;
+                });
+
+                setMonthlyPayments(updatedPayments);
+            } else {
+                setMonthlyPayments(calculatedPayments);
+            }
+        } catch (error) {
+            console.error('Error processing payment data:', error);
+            setMonthlyPayments(calculatedPayments);
+        }
+    };
+
+    // Function to mark a monthly payment as paid
+    const handleMarkMonthlyPaymentAsPaid = async (payment) => {
+        try {
+            // Prepare payment data for the database - always store in rent_payments table
+            const paymentData = {
+                rental_id: payment.rental_id,
+                payment_date: new Date().toISOString().split('T')[0],
+                amount: payment.amount,
+                month: payment.month,
+                due_date: payment.due_date
+            };
+
+            // Save payment to the database
+            const response = await axios.post('http://localhost:5001/api/payment/addRentPayment', paymentData);
+
+            if (response.data && response.data.success) {
+                // Update the payment status locally after successful database update
+                const updatedPayments = monthlyPayments.map(p =>
+                    p.id === payment.id ?
+                        {
+                            ...p,
+                            status: 'paid',
+                            payment_date: paymentData.payment_date,
+                            amount_paid: paymentData.amount,
+                            payment_id: response.data.payment_id // Store the payment ID from the database
+                        } :
+                        p
+                );
+
+                setMonthlyPayments(updatedPayments);
+
+                // Show success message
+                alert('Payment recorded successfully!');
+
+                // Refresh both the rentals list and paid payments list to reflect the updated payment status
+                fetchRentals();
+
+                // VERY IMPORTANT: Refresh the paid payments too by directly calling the API
+                const paidPaymentsResponse = await axios.get('http://localhost:5001/api/payment/getAllPaidPayments');
+                setPaidPayments(paidPaymentsResponse.data?.payments || []);
+            } else {
+                alert('Failed to record payment in the database');
+            }
+        } catch (error) {
+            console.error('Error recording payment:', error);
+            alert('Failed to record payment: ' + (error.response?.data?.error || error.message));
+        }
     };
 
     // Function to handle adding a new rental
@@ -365,8 +695,28 @@ const Rental = () => {
 
             // If successful, refresh the rentals data to show the new entry
             if (response.data && response.data.rental) {
-                // Fetch updated rental data to ensure we have the latest information
-                await fetchRentals();
+                // Create a new rental entry for the Rent Payment section
+                const newRentalEntry = {
+                    id: response.data.rental.rental_id,
+                    property: selectedProperty.name || selectedProperty.property_name || 'Unknown Property',
+                    tenant: selectedClient.name || selectedClient.client_name || 'Unknown Client',
+                    dueDate: newRental.end_date,
+                    amount: parseFloat(newRental.rent_amount),
+                    status: mapRentalStatusToPaymentStatus(newRental.status),
+                    paymentDate: newRental.status === 'Completed' ? new Date().toISOString() : '',
+                    method: newRental.status === 'Completed' ? 'Bank Transfer' : '',
+                    property_id: parseInt(newRental.property_id),
+                    client_id: parseInt(newRental.client_id),
+                    start_date: newRental.start_date,
+                    end_date: newRental.end_date,
+                    notes: newRental.notes
+                };
+
+                // Add the new rental to the rentals state to immediately display it
+                setRentals(prevRentals => [newRentalEntry, ...prevRentals]);
+
+                // Also fetch updated rental data to ensure we have the latest information
+                fetchRentals();
 
                 // Reset form and close modal
                 setNewRental({
@@ -381,6 +731,9 @@ const Rental = () => {
                 });
 
                 setShowRentalModal(false);
+
+                // Set active tab to payments to ensure the user sees the new rental
+                setActiveTab('payments');
 
                 // Show success message
                 alert('Rental agreement added successfully!');
@@ -452,13 +805,7 @@ const Rental = () => {
         setSelectedProperty(property);
     };
 
-    // Dashboard metrics
-    const dashboardMetrics = {
-        totalRentedProperties: 5,
-        upcomingPayments: 2,
-        expiringLeases: 1,
-        overduePayments: 1
-    };
+    // Initial dashboard metrics setup already defined in useState above
 
     useEffect(() => {
         // Animation for dashboard numbers
@@ -501,21 +848,21 @@ const Rental = () => {
                         <FileText size={24} />
                     </div>
                     <div className="metric-content">
-                        <h3>Rented Properties</h3>
-                        <p className="metric-value" data-target={dashboardMetrics.totalRentedProperties}>
-                            {dashboardMetrics.totalRentedProperties}
+                        <h3>Active Rentals</h3>
+                        <p className="metric-value" data-target={dashboardMetrics.activeRentals}>
+                            {dashboardMetrics.activeRentals}
                         </p>
                     </div>
                 </div>
 
                 <div className="metric-card">
                     <div className="metric-icon upcoming-icon">
-                        <Clock size={24} />
+                        <CheckCircle size={24} />
                     </div>
                     <div className="metric-content">
-                        <h3>Upcoming Payments</h3>
-                        <p className="metric-value" data-target={dashboardMetrics.upcomingPayments}>
-                            {dashboardMetrics.upcomingPayments}
+                        <h3>Paid Rentals</h3>
+                        <p className="metric-value" data-target={dashboardMetrics.paidRentals}>
+                            {dashboardMetrics.paidRentals}
                         </p>
                     </div>
                 </div>
@@ -599,21 +946,39 @@ const Rental = () => {
                                 <button
                                     className={`filter-btn ${filterStatus === 'paid' ? 'active' : ''}`}
                                     onClick={() => setFilterStatus('paid')}
+                                    style={{
+                                        backgroundColor: filterStatus === 'paid' ? '#4CAF50' : '',
+                                        color: filterStatus === 'paid' ? 'white' : ''
+                                    }}
                                 >
                                     Paid
                                 </button>
                                 <button
                                     className={`filter-btn ${filterStatus === 'due' ? 'active' : ''}`}
                                     onClick={() => setFilterStatus('due')}
+                                    style={{
+                                        backgroundColor: filterStatus === 'due' ? '#FF9800' : '',
+                                        color: filterStatus === 'due' ? 'white' : ''
+                                    }}
                                 >
                                     Due
                                 </button>
                                 <button
                                     className={`filter-btn ${filterStatus === 'overdue' ? 'active' : ''}`}
-                                    onClick={() => setFilterStatus('overdue')}
+                                    style={{
+                                        backgroundColor: filterStatus === 'overdue' ? '#f44336' : '',
+                                        color: filterStatus === 'overdue' ? 'white' : '',
+                                        fontWeight: 'bold',
+                                        position: 'relative',
+                                    }}
+                                    onClick={() => {
+                                        console.log('Setting filter status to overdue');
+                                        setFilterStatus('overdue');
+                                    }}
                                 >
                                     Overdue
                                 </button>
+                                {/* Upcoming section removed as requested */}
                             </div>
                         </div>
 
@@ -631,11 +996,14 @@ const Rental = () => {
                                 </thead>
                                 <tbody>
                                     {filteredRentals.map(rental => (
-                                        <tr key={rental.id} onClick={() => handlePropertySelect(rental)}>
+                                        <tr
+                                            key={rental.id}
+                                            onClick={() => handlePropertySelect(rental)}
+                                            className={rental.isPaidFromTable ? 'from-database' : ''}>
                                             <td>{rental.property}</td>
                                             <td>{rental.tenant}</td>
                                             <td>{formatDate(rental.dueDate)}</td>
-                                            <td>${rental.amount.toLocaleString()}</td>
+                                            <td>${(rental.amount || 0).toLocaleString()}</td>
                                             <td>
                                                 <span className={`status-badge ${getStatusClass(rental.status)}`}>
                                                     {rental.status === 'paid' && <CheckCircle size={14} />}
@@ -643,23 +1011,43 @@ const Rental = () => {
                                                     {rental.status === 'overdue' && <XCircle size={14} />}
                                                     {rental.status.charAt(0).toUpperCase() + rental.status.slice(1)}
                                                 </span>
+                                                {rental.isPaidFromTable && (
+                                                    <span className="payment-badge" title="Payment record from rent_payments table">
+                                                        DB Record
+                                                    </span>
+                                                )}
                                             </td>
                                             <td>
-                                                {rental.status !== 'paid' && (
-                                                    <button
-                                                        className="action-btn mark-paid-btn"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleMarkAsPaid(rental.id);
-                                                        }}
-                                                    >
-                                                        Mark as Paid
-                                                    </button>
-                                                )}
-                                                {rental.status === 'paid' && (
-                                                    <button className="action-btn view-receipt-btn">
-                                                        View Receipt
-                                                    </button>
+                                                {!rental.isPaidFromTable ? (
+                                                    <>
+                                                        <button
+                                                            className="action-btn details-btn"
+                                                            onClick={(e) => handleShowDetails(rental, e)}
+                                                        >
+                                                            Show Details
+                                                        </button>
+                                                        {rental.status !== 'paid' && (
+                                                            <button
+                                                                className="action-btn mark-paid-btn"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleMarkAsPaid(rental.id);
+                                                                }}
+                                                            >
+                                                                Mark as Paid
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="payment-info">
+                                                            <strong>Payment Date:</strong> {formatDate(rental.paymentDate)}<br />
+                                                            <strong>Amount Paid:</strong> ${rental.amount.toLocaleString()}
+                                                        </span>
+                                                        <button className="action-btn view-receipt-btn">
+                                                            View Receipt
+                                                        </button>
+                                                    </>
                                                 )}
                                             </td>
                                         </tr>
@@ -668,47 +1056,141 @@ const Rental = () => {
                             </table>
                         </div>
 
-                        {selectedProperty && (
-                            <div className="detail-panel">
-                                <div className="detail-header">
-                                    <h3>{selectedProperty.property}</h3>
-                                    <button className="close-btn" onClick={() => setSelectedProperty(null)}>×</button>
-                                </div>
-                                <div className="detail-content">
-                                    <div className="detail-section">
-                                        <h4>Tenant Information</h4>
-                                        <p><strong>Name:</strong> {selectedProperty.tenant}</p>
-                                        <p><strong>Contact:</strong> +1 (123) 456-7890</p>
-                                        <p><strong>Email:</strong> tenant@example.com</p>
+                        {/* Monthly Payment Details Modal */}
+                        {selectedRental && (
+                            <div className="modal-overlay" style={{
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                zIndex: 1000
+                            }}>
+                                <div className="modal-content" style={{
+                                    backgroundColor: 'white',
+                                    borderRadius: '8px',
+                                    padding: '20px',
+                                    width: '700px',
+                                    maxHeight: '80vh',
+                                    overflowY: 'auto',
+                                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
+                                }}>
+                                    <div className="modal-header" style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: '15px',
+                                        position: 'sticky',
+                                        top: 0,
+                                        backgroundColor: 'white',
+                                        zIndex: 1
+                                    }}>
+                                        <h3 style={{ margin: 0 }}>Monthly Payment Details</h3>
+                                        <button
+                                            onClick={() => setSelectedRental(null)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                fontSize: '24px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >×</button>
                                     </div>
-                                    <div className="detail-section">
-                                        <h4>Payment History</h4>
-                                        <div className="mini-table">
-                                            <div className="mini-row header">
-                                                <div>Date</div>
-                                                <div>Amount</div>
-                                                <div>Method</div>
+
+                                    <div style={{ marginBottom: '20px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                            <div>
+                                                <p><strong>Property:</strong> {selectedRental.property}</p>
+                                                <p><strong>Tenant:</strong> {selectedRental.tenant}</p>
                                             </div>
-                                            <div className="mini-row">
-                                                <div>Oct 5, 2023</div>
-                                                <div>${selectedProperty.amount}</div>
-                                                <div>Bank Transfer</div>
-                                            </div>
-                                            <div className="mini-row">
-                                                <div>Sep 3, 2023</div>
-                                                <div>${selectedProperty.amount}</div>
-                                                <div>Credit Card</div>
-                                            </div>
-                                            <div className="mini-row">
-                                                <div>Aug 5, 2023</div>
-                                                <div>${selectedProperty.amount}</div>
-                                                <div>Bank Transfer</div>
+                                            <div>
+                                                <p><strong>Start Date:</strong> {formatDate(selectedRental.start_date)}</p>
+                                                <p><strong>End Date:</strong> {formatDate(selectedRental.end_date)}</p>
+                                                <p><strong>Monthly Rent:</strong> ${selectedRental.amount.toLocaleString()}</p>
                                             </div>
                                         </div>
+                                        <p><strong>Total Duration:</strong> {monthlyPayments.length} months</p>
                                     </div>
-                                    <div className="detail-actions">
-                                        <button className="btn btn-outline">Contact Tenant</button>
-                                        <button className="btn btn-primary">View Documents</button>
+
+                                    <div className="monthly-payments-table" style={{ width: '100%' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                            <thead>
+                                                <tr style={{ backgroundColor: '#f5f5f5' }}>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Month</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Start Date</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>End Date</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Amount</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Status</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Payment Date</th>
+                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {monthlyPayments.map((payment) => (
+                                                    <tr key={payment.id} style={{ borderBottom: '1px solid #ddd' }}>
+                                                        <td style={{ padding: '10px' }}>Month {payment.id}</td>
+                                                        <td style={{ padding: '10px' }}>{formatDate(payment.start_date)}</td>
+                                                        <td style={{ padding: '10px' }}>{formatDate(payment.end_date)}</td>
+                                                        <td style={{ padding: '10px' }}>${payment.amount.toLocaleString()}</td>
+                                                        <td style={{ padding: '10px' }}>
+                                                            <span style={{
+                                                                padding: '4px 8px',
+                                                                borderRadius: '4px',
+                                                                fontSize: '12px',
+                                                                fontWeight: 'bold',
+                                                                color: 'white',
+                                                                backgroundColor:
+                                                                    payment.status === 'paid' ? '#4CAF50' :
+                                                                        payment.status === 'due' ? '#FF9800' :
+                                                                            payment.status === 'overdue' ? '#F44336' : '#9E9E9E'
+                                                            }}>
+                                                                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ padding: '10px' }}>
+                                                            {payment.payment_date ? formatDate(payment.payment_date) : '-'}
+                                                        </td>
+                                                        <td style={{ padding: '10px' }}>
+                                                            {payment.status !== 'paid' && (
+                                                                <button
+                                                                    onClick={() => handleMarkMonthlyPaymentAsPaid(payment)}
+                                                                    style={{
+                                                                        padding: '5px 10px',
+                                                                        backgroundColor: '#4CAF50',
+                                                                        color: 'white',
+                                                                        border: 'none',
+                                                                        borderRadius: '4px',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '12px'
+                                                                    }}
+                                                                >
+                                                                    Mark as Paid
+                                                                </button>
+                                                            )}
+                                                            {payment.status === 'paid' && (
+                                                                <button
+                                                                    style={{
+                                                                        padding: '5px 10px',
+                                                                        backgroundColor: '#2196F3',
+                                                                        color: 'white',
+                                                                        border: 'none',
+                                                                        borderRadius: '4px',
+                                                                        cursor: 'pointer',
+                                                                        fontSize: '12px'
+                                                                    }}
+                                                                >
+                                                                    View Receipt
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -946,7 +1428,7 @@ const Rental = () => {
                 <div className="modal-overlay">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h2>Add New Rental Agreement</h2>
+                            <h2>Add New Rental</h2>
                             <button className="close-btn" onClick={() => setShowRentalModal(false)}>&times;</button>
                         </div>
                         <div className="modal-body">

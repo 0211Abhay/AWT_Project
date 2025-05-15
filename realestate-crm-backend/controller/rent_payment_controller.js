@@ -1,0 +1,86 @@
+const { sequelize, RentPayment } = require('../models');
+const { QueryTypes } = require('sequelize');
+
+// Add a new rent payment
+const addRentPayment = async (req, res) => {
+    try {
+        const { 
+            rental_id, 
+            payment_date, 
+            amount, 
+            month, 
+            due_date 
+        } = req.body;
+
+        // Validate required fields
+        if (!rental_id || !payment_date || !amount) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Format the month name if month data is available
+        const formattedMonth = month || new Date(payment_date).toLocaleString('default', { month: 'long', year: 'numeric' });
+        
+        // Insert payment record into the database using Sequelize model
+        const result = await RentPayment.create({
+            rental_id, 
+            month: formattedMonth,
+            due_date: due_date || payment_date,
+            amount_due: amount,
+            amount_paid: amount,
+            payment_date, 
+            status: 'paid',
+            notes: 'Payment recorded via rental management system'
+        });
+
+        if (result) {
+            return res.status(201).json({ 
+                success: true, 
+                payment_id: result.payment_id,
+                message: 'Payment recorded successfully' 
+            });
+        } else {
+            return res.status(500).json({ error: 'Failed to record payment' });
+        }
+    } catch (error) {
+        console.error('Error recording payment:', error);
+        return res.status(500).json({ error: 'Server error', details: error.message });
+    }
+};
+
+// Get payments for a specific rental
+const getRentalPayments = async (req, res) => {
+    try {
+        const { rental_id } = req.params;
+
+        const payments = await RentPayment.findAll({
+            where: { rental_id },
+            order: [['payment_date', 'ASC']]
+        });
+
+        return res.status(200).json({ payments });
+    } catch (error) {
+        console.error('Error fetching rental payments:', error);
+        return res.status(500).json({ error: 'Server error', details: error.message });
+    }
+};
+
+// Get all paid payments
+const getAllPaidPayments = async (req, res) => {
+    try {
+        const payments = await RentPayment.findAll({
+            where: { status: 'paid' },
+            order: [['payment_date', 'DESC']]
+        });
+
+        return res.status(200).json({ payments });
+    } catch (error) {
+        console.error('Error fetching paid payments:', error);
+        return res.status(500).json({ error: 'Server error', details: error.message });
+    }
+};
+
+module.exports = {
+    addRentPayment,
+    getRentalPayments,
+    getAllPaidPayments
+};

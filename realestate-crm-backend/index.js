@@ -10,6 +10,7 @@ const clientRoutes = require('./routes/client_routes');
 const propertyRoutes = require('./routes/property_routes');
 const scheduleRoutes = require('./routes/schedule_routes');
 const rentalRoutes = require('./routes/rental_routes');
+const rentPaymentRoutes = require('./routes/rent_payment_routes');
 
 
 const passport = require('passport');
@@ -55,6 +56,7 @@ app.use('/api/client', clientRoutes);
 app.use('/api/property', propertyRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/rental', rentalRoutes);
+app.use('/api/payment', rentPaymentRoutes);
 
 app.use('/api/auth/google', googleAuthRoutes);
 
@@ -73,7 +75,9 @@ const startServer = async () => {
         console.log('✅ Database connected successfully');
 
         // ✅ Sync models with the database
-        await sequelize.sync({ alter: true }); // Creates or updates tables automatically
+        // Using { force: false } to avoid altering existing tables
+        // This prevents the 'Too many keys' error
+        await sequelize.sync({ force: false });
 
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
