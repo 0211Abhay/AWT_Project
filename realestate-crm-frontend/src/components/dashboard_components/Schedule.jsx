@@ -50,25 +50,41 @@ const Schedule = () => {
         }
     }, []);
 
-    // Fetch all schedules, properties, clients, and brokers
+    // Fetch schedules, properties, and clients for the current broker
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
+            setError(null);
+            
             try {
-                // Fetch schedules
-                const schedulesResponse = await axios.get('http://localhost:5001/api/schedule');
-
-                // Fetch properties for broker_id = 1
-                const propertiesResponse = await axios.get('http://localhost:5001/api/property/getAllProperty');
-                console.log('Fetched properties:', propertiesResponse.data);
-
-                // Fetch clients for broker_id = 1
-                const clientsResponse = await axios.get('http://localhost:5001/api/client/getAllClient');
-                console.log('Fetched clients:', clientsResponse.data);
-
                 // Get broker ID from localStorage
                 const currentBrokerId = localStorage.getItem('brokerId');
                 console.log('Current broker ID from localStorage:', currentBrokerId);
+                
+                if (!currentBrokerId) {
+                    throw new Error('Broker ID not found. Please log in again.');
+                }
+                
+                // Fetch schedules for the current broker
+                const schedulesResponse = await axios.get(`http://localhost:5001/api/schedule/broker/${currentBrokerId}`);
+
+                // Fetch properties for current broker
+                const propertiesResponse = await axios.get(`http://localhost:5001/api/property/getPropertiesByBroker/${currentBrokerId}`);
+                console.log('Fetched properties for broker (raw response):', propertiesResponse.data);
+                
+                // Log the full structure to debug
+                console.log('Properties response structure:', {
+                    hasProperties: !!propertiesResponse.data?.properties,
+                    isArray: Array.isArray(propertiesResponse.data),
+                    isArrayOfProperties: Array.isArray(propertiesResponse.data?.properties),
+                    dataKeys: Object.keys(propertiesResponse.data || {})
+                });
+
+                // Fetch clients for current broker
+                const clientsResponse = await axios.post('http://localhost:5001/api/client/getClientsByBroker', {
+                    broker_id: currentBrokerId
+                });
+                console.log('Fetched clients for broker:', clientsResponse.data);
 
                 // Transform schedule data to match the component's expected format
                 const formattedSchedules = schedulesResponse.data.map(schedule => {
@@ -126,17 +142,27 @@ const Schedule = () => {
                     };
                 });
 
-                // Get properties from the correct data structure and filter by broker_id from localStorage
-                // Based on the console log, properties are in propertiesResponse.data.properties
-                const properties = propertiesResponse.data.properties || [];
-                console.log('Properties array:', properties);
-
-                const formattedProperties = properties
-                    .filter(property => property.broker_id === parseInt(currentBrokerId))
-                    .map(property => ({
-                        property_id: property.property_id,
-                        name: property.name || property.title || 'Unnamed Property'
-                    }));
+                // Handle different possible property response structures
+                let rawProperties = [];
+                
+                // Check if response is in the format {properties: [...]} or direct array [...]
+                if (propertiesResponse.data && propertiesResponse.data.properties) {
+                    // Response has {properties: [...]} format
+                    rawProperties = propertiesResponse.data.properties;
+                } else if (Array.isArray(propertiesResponse.data)) {
+                    // Response is a direct array
+                    rawProperties = propertiesResponse.data;
+                } else {
+                    console.error('Unexpected property response format:', propertiesResponse.data);
+                }
+                
+                console.log('Raw properties array:', rawProperties);
+                
+                // No need to filter by broker_id since the endpoint already filters by broker
+                const formattedProperties = rawProperties.map(property => ({
+                    property_id: property.property_id,
+                    name: property.name || property.title || 'Unnamed Property'
+                }));
                 console.log(`Filtered properties for broker_id=${currentBrokerId}:`, formattedProperties);
 
                 // Format clients data for broker_id from localStorage
@@ -155,8 +181,8 @@ const Schedule = () => {
                 console.log('Filtered clients for broker_id=1:', formattedClients);
 
                 setVisits(formattedSchedules);
-                setProperties(formattedProperties);
-                setClients(formattedClients);
+                setProperties(formattedProperties); // Use the filtered properties array for rendering
+                setClients(formattedClients); // Use the filtered clients array
                 // No longer need to set brokers as we're using a fixed broker_id
 
                 // Calculate dashboard metrics
