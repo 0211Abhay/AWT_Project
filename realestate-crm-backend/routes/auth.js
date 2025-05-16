@@ -111,6 +111,67 @@ router.post('/logout', isAuthenticated, (req, res) => {
     });
 });
 
+// Get Broker Profile
+router.get('/profile', isAuthenticated, async (req, res) => {
+    try {
+        const brokerId = req.session.brokerId;
+
+        // Find broker by ID
+        const broker = await Broker.findByPk(brokerId);
+        if (!broker) {
+            return res.status(404).json({ success: false, message: 'Broker not found' });
+        }
+
+        const { password_hash, ...brokerData } = broker.toJSON();
+        res.json({
+            success: true,
+            broker: brokerData
+        });
+    } catch (error) {
+        console.error('Profile fetch error:', error);
+        res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    }
+});
+
+// Update Broker Profile
+router.put('/profile', isAuthenticated, async (req, res) => {
+    try {
+        const brokerId = req.session.brokerId;
+        const { name, email, phone } = req.body;
+
+        // Find broker by ID
+        const broker = await Broker.findByPk(brokerId);
+        if (!broker) {
+            return res.status(404).json({ success: false, message: 'Broker not found' });
+        }
+
+        // Check if email is being changed and if it's already in use
+        if (email !== broker.email) {
+            const existingBroker = await Broker.findOne({ where: { email } });
+            if (existingBroker) {
+                return res.status(400).json({ success: false, message: 'Email already in use' });
+            }
+        }
+
+        // Update broker
+        broker.name = name || broker.name;
+        broker.email = email || broker.email;
+        broker.phone = phone || broker.phone;
+
+        await broker.save();
+
+        const { password_hash, ...brokerData } = broker.toJSON();
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            broker: brokerData
+        });
+    } catch (error) {
+        console.error('Profile update error:', error);
+        res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    }
+});
+
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback', passport.authenticate('google', {
