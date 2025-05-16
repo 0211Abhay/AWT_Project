@@ -3,7 +3,7 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
-const pgSession = require('connect-pg-simple')(session);
+const MySQLStore = require('express-mysql-session')(session);
 
 const { sequelize, Client, Broker, Property } = require('./models'); // Import models properly
 const authRoutes = require('./routes/auth');
@@ -35,12 +35,22 @@ app.use(cors({
 
 // Session configuration
 app.use(session({
-    store: new pgSession({
-        conObject: {
-            connectionString: process.env.DATABASE_URL,
-            ssl: process.env.DB_SSL_MODE === 'true' ? { rejectUnauthorized: false } : undefined
-        },
-        tableName: 'session'
+    store: new MySQLStore({
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        ssl: process.env.DB_SSL_MODE === 'true' ? { rejectUnauthorized: false } : undefined,
+        createDatabaseTable: true,
+        schema: {
+            tableName: 'sessions',
+            columnNames: {
+                session_id: 'sid',
+                expires: 'expire',
+                data: 'sess'
+            }
+        }
     }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
@@ -84,15 +94,7 @@ const startServer = async () => {
         await sequelize.sync();
         console.log('Database models synchronized successfully.');
 
-        // Create session table if it doesn't exist
-        await sequelize.query(`
-            CREATE TABLE IF NOT EXISTS "session" (
-                "sid" varchar NOT NULL COLLATE "default",
-                "sess" json NOT NULL,
-                "expire" timestamp(6) NOT NULL,
-                CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
-            )
-        `);
+        // Session table will be created automatically by express-mysql-session
 
         const PORT = process.env.PORT || 10000;
         app.listen(PORT, '0.0.0.0', () => {

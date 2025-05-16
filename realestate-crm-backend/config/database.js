@@ -10,7 +10,7 @@ console.log(`SSL Mode: ${process.env.DB_SSL_MODE}`);
 
 let sequelize;
 
-const dialect = process.env.DB_DIALECT || 'postgres';
+const dialect = process.env.DB_DIALECT || 'mysql';
 
 if (process.env.DATABASE_URL) {
     console.log('Using database connection string');
@@ -21,6 +21,8 @@ if (process.env.DATABASE_URL) {
                 ? { require: true, rejectUnauthorized: false }
                 : undefined,
             connectTimeout: 60000,
+            supportBigNumbers: true,
+            bigNumberStrings: true
         },
         logging: false,
         pool: {
@@ -49,6 +51,8 @@ if (process.env.DATABASE_URL) {
                 ? { require: true, rejectUnauthorized: false }
                 : false,
             connectTimeout: 60000,
+            supportBigNumbers: true,
+            bigNumberStrings: true
         },
         pool: {
             max: 2,
