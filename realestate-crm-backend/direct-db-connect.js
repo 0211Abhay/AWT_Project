@@ -1,11 +1,17 @@
 require('dotenv').config();
 const mysql = require('mysql2');
+const fs = require('fs');
+const path = require('path');
+
+// Get the path to the certificate file
+const certPath = path.join(__dirname, 'sert', 'ca2.pem');
 
 // Log connection details
 console.log('Attempting direct connection to Aiven MySQL:');
 console.log(`Host: ${process.env.DB_HOST}`);
 console.log(`Port: ${process.env.DB_PORT}`);
 console.log(`Database: aj_awt_project`);
+console.log(`Certificate Path: ${certPath}`);
 
 // Create the connection with extensive options
 const connection = mysql.createConnection({
@@ -15,7 +21,8 @@ const connection = mysql.createConnection({
   password: process.env.DB_PASSWORD,
   database: 'aj_awt_project',
   ssl: process.env.DB_SSL_MODE === 'REQUIRED' ? {
-    rejectUnauthorized: false
+    ca: fs.readFileSync(certPath),
+    rejectUnauthorized: true
   } : false,
   connectTimeout: 60000, // 1 minute timeout
   debug: true, // Enable debugging

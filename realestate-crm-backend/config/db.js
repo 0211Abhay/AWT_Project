@@ -1,6 +1,11 @@
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
 
 const isProduction = process.env.NODE_ENV === 'production' || true;
+
+// Get the path to the certificate file
+const certPath = path.join(__dirname, '..', 'sert', 'ca2.pem');
 
 // Log the configuration to help troubleshoot
 console.log('Database Configuration:');
@@ -8,6 +13,7 @@ console.log('Host:', process.env.DB_HOST);
 console.log('Port:', process.env.DB_PORT);
 console.log('Database:', process.env.DB_NAME);
 console.log('SSL Mode:', process.env.DB_SSL_MODE);
+console.log('Certificate Path:', certPath);
 
 module.exports = {
     database: process.env.DB_NAME || 'aj_awt_project',
@@ -19,7 +25,8 @@ module.exports = {
     logging: console.log, // Enable logging for troubleshooting
     dialectOptions: {
         ssl: process.env.DB_SSL_MODE === 'REQUIRED' ? {
-            rejectUnauthorized: false // Allow self-signed certificates
+            ca: fs.readFileSync(certPath),
+            rejectUnauthorized: true
         } : false,
         connectTimeout: 120000, // Increase timeout to 2 minutes for cloud connections
         // These options help with connection troubles

@@ -1,4 +1,9 @@
 const { Sequelize } = require('sequelize');
+const fs = require('fs');
+const path = require('path');
+
+// Get the path to the certificate file
+const certPath = path.join(__dirname, '..', 'sert', 'ca2.pem');
 
 // Log connection details
 console.log('Database Configuration:');
@@ -6,6 +11,7 @@ console.log(`Host: ${process.env.DB_HOST}`);
 console.log(`Port: ${process.env.DB_PORT}`);
 console.log(`Database: ${process.env.DB_NAME}`);
 console.log(`SSL Mode: ${process.env.DB_SSL_MODE}`);
+console.log(`Certificate Path: ${certPath}`);
 
 // Use DATABASE_URL if available, otherwise use individual parameters
 let sequelize;
@@ -17,7 +23,8 @@ if (process.env.DATABASE_URL) {
         dialect: 'mysql',
         dialectOptions: {
             ssl: {
-                rejectUnauthorized: false
+                ca: fs.readFileSync(certPath),
+                rejectUnauthorized: true
             },
             connectTimeout: 60000 // 1 minute
         },
@@ -42,7 +49,8 @@ if (process.env.DATABASE_URL) {
         logging: console.log,
         dialectOptions: {
             ssl: process.env.DB_SSL_MODE === 'REQUIRED' ? {
-                rejectUnauthorized: false
+                ca: fs.readFileSync(certPath),
+                rejectUnauthorized: true
             } : false,
             connectTimeout: 60000 // 1 minute
         },
