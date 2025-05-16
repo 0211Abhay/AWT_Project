@@ -1,7 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { Broker } = require('../models');
-const bcrypt = require('bcrypt'); // Add this line
+const bcrypt = require('bcrypt'); 
 require('dotenv').config();
 
 passport.use(new GoogleStrategy({
@@ -21,7 +21,7 @@ async (accessToken, refreshToken, profile, done) => {
             broker = await Broker.create({
                 name: profile.displayName,
                 email: profile.emails[0].value,
-                password_hash: password_hash // Use the generated hash instead of null
+                password_hash: password_hash 
             });
         }
 
@@ -32,14 +32,23 @@ async (accessToken, refreshToken, profile, done) => {
 }));
 
 passport.serializeUser((broker, done) => {
+    console.log('Serializing user:', broker.broker_id);
     done(null, broker.broker_id);
 });
 
 passport.deserializeUser(async (id, done) => {
     try {
+        console.log('Deserializing user ID:', id);
         const broker = await Broker.findByPk(id);
-        done(null, broker);
+        if (broker) {
+            console.log('Deserialized user found:', broker.email);
+            done(null, broker);
+        } else {
+            console.log('No broker found with ID:', id);
+            done(null, false);
+        }
     } catch (err) {
+        console.error('Deserialize error:', err);
         done(err, null);
     }
 });
