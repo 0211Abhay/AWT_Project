@@ -1,5 +1,11 @@
 # Aiven MySQL Database Setup Guide
 
+## Important: Website Access vs. Database Connection
+
+**Website Access**: Your frontend website at https://estatemate2.onrender.com/ is automatically accessible to anyone on the internet. There are no IP restrictions for end users visiting your site.
+
+**Database Connection**: The IP restrictions discussed below are ONLY for the connection between your backend server and your Aiven database. This server-to-server connection happens behind the scenes and doesn't affect who can use your website.
+
 ## Critical Step: Configure Network Access Control
 
 The connection timeout errors you're experiencing are most likely due to Aiven's network security rules blocking connections from Render's IP addresses.
@@ -14,21 +20,22 @@ The connection timeout errors you're experiencing are most likely due to Aiven's
 
 1. Navigate to the **Security** tab
 2. Click on **Network Access Control**
-3. Add the following Render IP ranges to the allowlist:
-   - `35.236.87.24/29`
-   - `3.101.124.69/32`
-   - `35.245.187.255/32`
-   - `35.236.54.224/29`
+3. Add the following Render outbound IP addresses to the allowlist:
+   - `100.20.92.101`
+   - `44.225.181.72`
+   - `44.227.217.144`
 
 4. Make sure to **Apply** the changes
 
-### Step 3: Temporary Testing Approach
+### Step 3: Recommended Approach (Quickest Solution)
 
-If you're still experiencing connection issues, you can temporarily allow all IPs for testing:
+For the fastest solution to get your application working:
 
 1. In the Network Access Control panel, add `0.0.0.0/0` to allow all IPs
-2. Test your connection
-3. **Important**: After confirming it works, restrict access to only Render's IP ranges for security
+2. This allows your backend server to connect to your database from any IP address
+3. Deploy your backend and test that everything works
+
+**Note**: While this approach is less secure for a production database, it will get your application working immediately. You can later restrict it to just Render's specific IPs for better security.
 
 ## Verify Connection
 
