@@ -1163,33 +1163,28 @@ const Rental = () => {
                                         <p><strong>Total Duration:</strong> {monthlyPayments.length} months</p>
                                     </div>
 
-                                    <div className="monthly-payments-table" style={{ width: '100%' }}>
-                                        <table className="data-table responsive-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <div className="monthly-payments-table">
+                                        <table className="data-table responsive-table">
                                             <thead>
-                                                <tr style={{ backgroundColor: '#f5f5f5' }}>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Month</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Start Date</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>End Date</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Amount</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Status</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Payment Date</th>
-                                                    <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Actions</th>
+                                                <tr>
+                                                    <th>Month</th>
+                                                    <th>Start Date</th>
+                                                    <th>End Date</th>
+                                                    <th>Amount</th>
+                                                    <th>Status</th>
+                                                    <th>Payment Date</th>
+                                                    <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {monthlyPayments.map((payment) => (
-                                                    <tr key={payment.id} style={{ borderBottom: '1px solid #ddd' }}>
-                                                        <td data-label="Month" style={{ padding: '10px' }}>Month {payment.id}</td>
-                                                        <td data-label="Start Date" style={{ padding: '10px' }}>{formatDate(payment.start_date)}</td>
-                                                        <td data-label="End Date" style={{ padding: '10px' }}>{formatDate(payment.end_date)}</td>
-                                                        <td data-label="Amount" style={{ padding: '10px' }}>${payment.amount.toLocaleString()}</td>
-                                                        <td data-label="Status" style={{ padding: '10px' }}>
+                                                    <tr key={payment.id}>
+                                                        <td data-label="Month">Month {payment.id}</td>
+                                                        <td data-label="Start Date">{formatDate(payment.start_date)}</td>
+                                                        <td data-label="End Date">{formatDate(payment.end_date)}</td>
+                                                        <td data-label="Amount">${payment.amount.toLocaleString()}</td>
+                                                        <td data-label="Status">
                                                             <span style={{
-                                                                padding: '4px 8px',
-                                                                borderRadius: '4px',
-                                                                fontSize: '12px',
-                                                                fontWeight: 'bold',
-                                                                color: 'white',
                                                                 backgroundColor:
                                                                     payment.status === 'paid' ? '#4CAF50' :
                                                                         payment.status === 'due' ? '#FF9800' :
@@ -1198,37 +1193,21 @@ const Rental = () => {
                                                                 {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                                                             </span>
                                                         </td>
-                                                        <td data-label="Payment Date" style={{ padding: '10px' }}>
+                                                        <td data-label="Payment Date">
                                                             {payment.payment_date ? formatDate(payment.payment_date) : '-'}
                                                         </td>
-                                                        <td data-label="Actions" style={{ padding: '10px' }}>
+                                                        <td data-label="Actions">
                                                             {payment.status !== 'paid' && (
                                                                 <button
                                                                     onClick={() => handleMarkMonthlyPaymentAsPaid(payment)}
-                                                                    style={{
-                                                                        padding: '5px 10px',
-                                                                        backgroundColor: '#4CAF50',
-                                                                        color: 'white',
-                                                                        border: 'none',
-                                                                        borderRadius: '4px',
-                                                                        cursor: 'pointer',
-                                                                        fontSize: '12px'
-                                                                    }}
+                                                                    style={{ backgroundColor: '#4CAF50' }}
                                                                 >
                                                                     Mark as Paid
                                                                 </button>
                                                             )}
                                                             {payment.status === 'paid' && (
                                                                 <button
-                                                                    style={{
-                                                                        padding: '5px 10px',
-                                                                        backgroundColor: '#2196F3',
-                                                                        color: 'white',
-                                                                        border: 'none',
-                                                                        borderRadius: '4px',
-                                                                        cursor: 'pointer',
-                                                                        fontSize: '12px'
-                                                                    }}
+                                                                    style={{ backgroundColor: '#2196F3' }}
                                                                 >
                                                                     View Receipt
                                                                 </button>

@@ -32,7 +32,7 @@ body {
     background-color: #fdfeff;
     min-height: 100vh;
     border: 0px;
-    padding: 20px;
+    /* padding: 10px; */
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
