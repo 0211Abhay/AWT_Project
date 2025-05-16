@@ -5,13 +5,20 @@ module.exports = {
     username: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT, 10) || 3306,
     dialect: 'mysql',
-    logging: false,
+    logging: true, // Enable for troubleshooting
+    dialectOptions: {
+        ssl: process.env.DB_SSL_MODE === 'REQUIRED' ? {
+            rejectUnauthorized: false // Simplified to match working test
+        } : false,
+        connectTimeout: 60000 // Increase timeout to 60 seconds
+    },
     pool: {
         max: 5,
         min: 0,
-        acquire: 30000,
-        idle: 10000
+        acquire: 60000, // Increase acquisition timeout
+        idle: 20000 // Increase idle timeout
     }
 };
 

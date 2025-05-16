@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckSquare, Square, XSquare, Bell, Users, MapPin, Search, Clock, CheckCircle, XCircle } from 'lucide-react';
 import axios from 'axios';
+import apiClient, { fetchFromApi } from '../../utils/api';
+import API_CONFIG from '../../config/api';
 import "../../style/Schedule.css";
 
 const Schedule = () => {
@@ -66,10 +68,10 @@ const Schedule = () => {
                 }
 
                 // Fetch schedules for the current broker
-                const schedulesResponse = await axios.get(`http://localhost:5001/api/schedule/broker/${currentBrokerId}`);
+                const schedulesResponse = await apiClient.get(`/api/schedule/broker/${currentBrokerId}`);
 
                 // Fetch properties for current broker
-                const propertiesResponse = await axios.get(`http://localhost:5001/api/property/getPropertiesByBroker/${currentBrokerId}`);
+                const propertiesResponse = await apiClient.get(`/api/property/getPropertiesByBroker/${currentBrokerId}`);
                 console.log('Fetched properties for broker (raw response):', propertiesResponse.data);
 
                 // Log the full structure to debug
@@ -81,7 +83,7 @@ const Schedule = () => {
                 });
 
                 // Fetch clients for current broker
-                const clientsResponse = await axios.post('http://localhost:5001/api/client/getClientsByBroker', {
+                const clientsResponse = await apiClient.post('/api/client/getClientsByBroker', {
                     broker_id: currentBrokerId
                 });
                 console.log('Fetched clients for broker:', clientsResponse.data);
@@ -231,7 +233,7 @@ const Schedule = () => {
     // Function to fetch client information by ID
     const fetchClientById = async (clientId) => {
         try {
-            const response = await axios.get(`http://localhost:5001/api/client/getOneClient/${clientId}`);
+            const response = await apiClient.get(`/api/client/getOneClient/${clientId}`);
             return response.data.client || response.data; // Return the client object from the response
         } catch (error) {
             console.error(`Error fetching client with ID ${clientId}:`, error);
@@ -242,7 +244,7 @@ const Schedule = () => {
     // Function to get client name from client ID
     const getClientName = async (clientId) => {
         try {
-            const response = await axios.get(`http://localhost:5001/api/client/getClientName/${clientId}`);
+            const response = await apiClient.get(`/api/client/getClientName/${clientId}`);
             return response.data.clientName || 'Unknown Client';
         } catch (error) {
             console.error(`Error fetching client name for ID ${clientId}:`, error);
@@ -311,7 +313,7 @@ const Schedule = () => {
             if (visit.time === 'Invalid Date') {
                 try {
                     // Fetch the schedule directly to get the correct time
-                    const response = await axios.get(`http://localhost:5001/api/schedule/${visit.id}`);
+                    const response = await apiClient.get(`/api/schedule/${visit.id}`);
                     const schedule = response.data;
 
                     if (schedule && schedule.time) {
@@ -404,7 +406,7 @@ const Schedule = () => {
             }
 
             // Update status in the backend
-            const response = await axios.patch(`http://localhost:5001/api/schedule/${id}/status`, {
+            const response = await apiClient.patch(`/api/schedule/${id}/status`, {
                 status: backendStatus
             });
 
@@ -509,7 +511,7 @@ const Schedule = () => {
             };
 
             // Send data to the backend
-            const response = await axios.post('http://localhost:5001/api/schedule', scheduleData);
+            const response = await apiClient.post('/api/schedule', scheduleData);
 
             // Format the new visit to match the component's expected format
             const newVisit = {

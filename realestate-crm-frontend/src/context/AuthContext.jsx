@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import API_CONFIG from '../config/api';
 
 // Create axios instance with default config
 const api = axios.create({
-    baseURL: 'http://localhost:5001/api',
+    baseURL: `${API_CONFIG.BASE_URL}/api`,
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'

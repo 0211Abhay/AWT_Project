@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, Lock, User, Phone } from "lucide-react";
-import axios from "axios";
+import axios from 'axios';
+import API_CONFIG from '../config/api';
 import "../style/Login.css";
 import GoogleButton from 'react-google-button'
 
@@ -24,7 +25,7 @@ const SignUp = () => {
         }
 
         try {
-            const response = await axios.post("http://localhost:5001/api/auth/register", {
+            const response = await axios.post(`${API_CONFIG.BASE_URL}/api/auth/register`, {
                 name,
                 email,
                 phone,

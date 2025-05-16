@@ -12,17 +12,8 @@ const scheduleRoutes = require('./routes/schedule_routes');
 
 const app = express();
 
-// Initialize Sequelize with MySQL
-const sequelize = new Sequelize(
-    process.env.DB_NAME || 'aj_awt_project',
-    process.env.DB_USER || 'root',
-    process.env.DB_PASSWORD || '',
-    {
-        host: process.env.DB_HOST || 'localhost',
-        dialect: 'mysql',
-        logging: false
-    }
-);
+// Import the sequelize instance from the config file
+const { sequelize } = require('./config/database');
 
 // Test database connection
 sequelize.authenticate()
@@ -45,8 +36,19 @@ sequelize.authenticate()
 
 // Middleware
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
+    origin: function(origin, callback) {
+        const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log('Blocked by CORS:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(sessionMiddleware);

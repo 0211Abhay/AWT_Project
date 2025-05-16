@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CheckCircle, XCircle, Upload, FileText, Search, Bell, DollarSign, Clock, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
+import apiClient from '../../utils/api';
+import API_CONFIG from '../../config/api';
 // import { toast } from 'react-toastify'; // Commented out since it's not properly configured
 import "../../style/Rental.css";
 const Rental = () => {
@@ -93,7 +95,7 @@ const Rental = () => {
             // Fetch properties for this broker
             let propertiesData = [];
             try {
-                const propertiesResponse = await axios.get(`http://localhost:5001/api/property/getPropertiesByBroker/${currentBrokerId}`);
+                const propertiesResponse = await apiClient.get(`/api/property/getPropertiesByBroker/${currentBrokerId}`);
                 if (propertiesResponse.data) {
                     propertiesData = propertiesResponse.data.properties || [];
                     console.log('Broker properties:', propertiesData);
@@ -105,7 +107,7 @@ const Rental = () => {
             // If no properties found for this broker, fetch all properties as fallback
             if (!propertiesData || propertiesData.length === 0) {
                 try {
-                    const allPropertiesResponse = await axios.get('http://localhost:5001/api/property/getAllProperty');
+                    const allPropertiesResponse = await apiClient.get('/api/property/getAllProperty');
                     if (allPropertiesResponse.data && allPropertiesResponse.data.properties) {
                         // Filter properties by broker_id if possible, otherwise show all
                         propertiesData = allPropertiesResponse.data.properties.filter(property =>
@@ -124,7 +126,7 @@ const Rental = () => {
             let clientsData = [];
             try {
                 // Use axios for consistent API calls and POST request for getClientsByBroker
-                const clientsResponse = await axios.post('http://localhost:5001/api/client/getClientsByBroker', {
+                const clientsResponse = await apiClient.post('/api/client/getClientsByBroker', {
                     broker_id: currentBrokerId
                 });
 
@@ -139,7 +141,7 @@ const Rental = () => {
             // If no clients found for this broker, fetch all clients as fallback
             if (!clientsData || clientsData.length === 0) {
                 try {
-                    const allClientsResponse = await axios.get('http://localhost:5001/api/client/getAllClient');
+                    const allClientsResponse = await apiClient.get('/api/client/getAllClient');
                     if (allClientsResponse.data) {
                         // Filter clients by broker_id if possible, otherwise show all
                         clientsData = allClientsResponse.data.filter(client =>
@@ -276,10 +278,10 @@ const Rental = () => {
             }
 
             // Fetch rentals from the API using the broker-specific endpoint
-            const rentalResponse = await axios.get(`http://localhost:5001/api/rental/getRentalsByBroker/${currentBrokerId}`);
+            const rentalResponse = await apiClient.get(`/api/rental/getRentalsByBroker/${currentBrokerId}`);
 
             // Fetch paid payments filtered by broker ID
-            const paidPaymentsResponse = await axios.get(`http://localhost:5001/api/payment/getAllPaidPayments/${currentBrokerId}`);
+            const paidPaymentsResponse = await apiClient.get(`/api/payment/getAllPaidPayments/${currentBrokerId}`);
             const fetchedPaidPayments = paidPaymentsResponse.data?.payments || [];
 
             // Store the paid payments separately for the Paid section
@@ -561,7 +563,7 @@ const Rental = () => {
     // Function to fetch payment history from the database
     const fetchRentalPayments = async (rentalId) => {
         try {
-            const response = await axios.get(`http://localhost:5001/api/payment/getRentalPayments/${rentalId}`);
+            const response = await apiClient.get(`/api/payment/getRentalPayments/${rentalId}`);
             return response.data.payments || [];
         } catch (error) {
             console.error('Error fetching payment history:', error);
@@ -572,7 +574,7 @@ const Rental = () => {
     // Function to fetch all paid payments directly from rent_payments table
     const fetchAllPaidPayments = async () => {
         try {
-            const response = await axios.get('http://localhost:5001/api/payment/getAllPaidPayments');
+            const response = await apiClient.get('/api/payment/getAllPaidPayments');
             return response.data.payments || [];
         } catch (error) {
             console.error('Error fetching paid payments:', error);
@@ -641,7 +643,7 @@ const Rental = () => {
             };
 
             // Save payment to the database
-            const response = await axios.post('http://localhost:5001/api/payment/addRentPayment', paymentData);
+            const response = await apiClient.post('/api/payment/addRentPayment', paymentData);
 
             if (response.data && response.data.success) {
                 // Update the payment status locally after successful database update
@@ -666,7 +668,7 @@ const Rental = () => {
                 fetchRentals();
 
                 // VERY IMPORTANT: Refresh the paid payments too by directly calling the API
-                const paidPaymentsResponse = await axios.get('http://localhost:5001/api/payment/getAllPaidPayments');
+                const paidPaymentsResponse = await apiClient.get('/api/payment/getAllPaidPayments');
                 setPaidPayments(paidPaymentsResponse.data?.payments || []);
             } else {
                 alert('Failed to record payment in the database');
@@ -724,7 +726,7 @@ const Rental = () => {
             // Show loading state
             setLoadingData(true);
 
-            const response = await axios.post('http://localhost:5001/api/rental/createRental', rentalData);
+            const response = await apiClient.post('/api/rental/createRental', rentalData);
             
             // If successful, refresh the rentals data to show the new entry
             if (response.data && response.data.rental) {

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import "../../style/Properties.css";
 import AddPropertyModel from './AddPropertyModel';
 import { FaFileExport, FaPlus } from 'react-icons/fa';
+import axios from 'axios';
+import apiClient, { fetchFromApi } from '../../utils/api';
+import API_CONFIG from '../../config/api';
 import ExportProperties from '../ExportProperties';
 
 const Properties = () => {
@@ -76,7 +79,7 @@ const Properties = () => {
             // Ensure broker ID is available
             if (!brokerId) {
                 console.warn('No broker ID found, falling back to all properties');
-                const fallbackResponse = await fetch('http://localhost:5001/api/property/getAllProperty');
+                const fallbackResponse = await fetch(`${API_CONFIG.BASE_URL}/api/property/getAllProperty`);
                 if (!fallbackResponse.ok) {
                     throw new Error('Failed to fetch properties');
                 }
@@ -87,7 +90,7 @@ const Properties = () => {
             }
             
             // Use the broker-specific endpoint with the broker ID
-            const response = await fetch(`http://localhost:5001/api/property/getPropertiesByBroker/${brokerId}`);
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/property/getPropertiesByBroker/${brokerId}`);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch properties for this broker');

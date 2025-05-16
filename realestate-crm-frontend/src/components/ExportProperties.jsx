@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/api';
+import API_CONFIG from '../config/api';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -14,8 +16,8 @@ const ExportProperties = ({ brokerId }) => {
     
     // If broker ID is provided, use broker-specific endpoint
     const endpoint = brokerId 
-      ? `http://localhost:5001/api/property/getPropertiesByBroker/${brokerId}`
-      : 'http://localhost:5001/api/property/getAllProperty';
+      ? `${API_CONFIG.BASE_URL}/api/property/getPropertiesByBroker/${brokerId}`
+      : `${API_CONFIG.BASE_URL}/api/property/getAllProperty`;
       
     console.log(`Exporting properties from endpoint: ${endpoint}`);
     

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import apiClient, { fetchFromApi } from '../../utils/api';
+import API_CONFIG from '../../config/api';
 import { FaFileExport } from 'react-icons/fa';
 import ExportClients from '../ExportClients';
 
@@ -43,7 +45,7 @@ const Client = () => {
             console.log('Fetching client details for client ID:', clientId);
 
             // Fetch schedules
-            const schedulesRes = await fetch(`http://localhost:5001/api/schedule/client/${clientId}`);
+            const schedulesRes = await fetch(`${API_CONFIG.BASE_URL}/api/schedule/client/${clientId}`);
             if (!schedulesRes.ok) {
                 const errorData = await schedulesRes.json();
                 throw new Error(errorData.details || 'Failed to fetch schedules');
@@ -58,7 +60,7 @@ const Client = () => {
                 const propertyId = schedulesData[0].property_id;
                 console.log('Fetching property with ID:', propertyId);
 
-                const propertyRes = await fetch(`http://localhost:5001/api/property/getOneProperty/${propertyId}`);
+                const propertyRes = await fetch(`${API_CONFIG.BASE_URL}/api/property/getOneProperty/${propertyId}`);
                 if (!propertyRes.ok) {
                     const errorData = await propertyRes.json();
                     throw new Error(errorData.details || 'Failed to fetch property');
@@ -71,7 +73,7 @@ const Client = () => {
 
             // Fetch rental information for the client
             try {
-                const rentalRes = await axios.get(`http://localhost:5001/api/rental/getRentalsByClient/${clientId}`);
+                const rentalRes = await apiClient.get(`/api/rental/getRentalsByClient/${clientId}`);
                 if (rentalRes.data && rentalRes.data.rentals) {
                     console.log('Fetched rentals:', rentalRes.data.rentals);
 
@@ -106,7 +108,7 @@ const Client = () => {
                         }
                         
                         // Use the new endpoint with broker ID parameter
-                        const paidPaymentsResponse = await axios.get(`http://localhost:5001/api/payment/getAllPaidPayments/${brokerId}`);
+                        const paidPaymentsResponse = await apiClient.get(`/api/payment/getAllPaidPayments/${brokerId}`);
                         const fetchedPaidPayments = paidPaymentsResponse.data?.payments || [];
 
                         // Filter to get only payments relevant to this client's rentals
@@ -169,7 +171,7 @@ const Client = () => {
             }
 
             // Use the broker-specific endpoint with the broker ID
-            const response = await axios.post('http://localhost:5001/api/client/getClientsByBroker', {
+            const response = await apiClient.post('/api/client/getClientsByBroker', {
                 broker_id: brokerId
             });
 
@@ -205,7 +207,7 @@ const Client = () => {
                 throw new Error('Broker ID not found. Please log in again.');
             }
             
-            const response = await fetch('http://localhost:5001/api/client/createClient', {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/client/createClient`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -236,7 +238,7 @@ const Client = () => {
         }
 
         try {
-            const response = await fetch(`http://localhost:5001/api/client/updateClient/${currentClient.id}`, {
+            const response = await fetch(`${API_CONFIG.BASE_URL}/api/client/updateClient/${currentClient.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(currentClient)
@@ -260,7 +262,7 @@ const Client = () => {
     const deleteClient = async (id) => {
         if (window.confirm('Are you sure you want to delete this client?')) {
             try {
-                const response = await fetch(`http://localhost:5001/api/client/deleteClient/${id}`, {
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/client/deleteClient/${id}`, {
                     method: 'DELETE'
                 });
 

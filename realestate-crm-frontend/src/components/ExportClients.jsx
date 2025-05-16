@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import apiClient from '../utils/api';
+import API_CONFIG from '../config/api';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
@@ -14,7 +16,7 @@ const ExportClients = ({ brokerId }) => {
     if (brokerId) {
       console.log(`Exporting clients for broker ID: ${brokerId}`);
       // Use broker-specific endpoint
-      axios.post('http://localhost:5001/api/client/getClientsByBroker', {
+      apiClient.post('/api/client/getClientsByBroker', {
         broker_id: brokerId
       })
         .then((res) => {
@@ -29,7 +31,7 @@ const ExportClients = ({ brokerId }) => {
     } else {
       // Fallback to all clients if no broker ID provided
       console.warn('No broker ID provided, fetching all clients');
-      axios.get('http://localhost:5001/api/client/getAllClient')
+      apiClient.get('/api/client/getAllClient')
         .then((res) => {
           setClients(res.data);
           setLoading(false);

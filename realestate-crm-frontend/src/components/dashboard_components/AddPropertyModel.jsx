@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import API_CONFIG from '../../config/api';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import '../../style/AddPropertyModel.css';
@@ -192,11 +193,11 @@ const AddPropertyModel = ({ isOpen, onClose, propertyToEdit = null }) => {
 
             console.log(`${isEditMode ? 'Updating' : 'Sending'} property data:`, propertyPayload);
 
-            let url = 'http://localhost:5001/api/property/createProperty';
+            let url = `${API_CONFIG.BASE_URL}/api/property/createProperty`;
             let method = 'POST';
 
             if (isEditMode && propertyToEdit) {
-                url = `http://localhost:5001/api/property/updateProperty/${propertyToEdit.property_id}`;
+                url = `${API_CONFIG.BASE_URL}/api/property/updateProperty/${propertyToEdit.property_id}`;
                 method = 'PUT';
             }
 
