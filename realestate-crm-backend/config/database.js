@@ -17,18 +17,22 @@ if (process.env.DATABASE_URL) {
     sequelize = new Sequelize(process.env.DATABASE_URL, {
         dialect,
         dialectOptions: {
-            ssl: 
+            ssl: process.env.DB_SSL_MODE === 'true'
                 ? { require: true, rejectUnauthorized: false }
-                    : undefined,
+                : undefined,
             connectTimeout: 60000,
         },
-        logging: console.log,
+        logging: false,
         pool: {
-            max: 2,
+            max: 5,
             min: 0,
-            acquire: 300000,
-            idle: 10000,
+            acquire: 60000,
+            idle: 10000
         },
+        retry: {
+            max: 5,
+            timeout: 3000
+        }
     });
 } else {
     console.log('Using individual connection parameters');

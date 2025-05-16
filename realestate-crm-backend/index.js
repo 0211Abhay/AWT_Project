@@ -3,6 +3,7 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 
 const { sequelize, Client, Broker, Property } = require('./models'); // Import models properly
 const authRoutes = require('./routes/auth');
@@ -34,6 +35,13 @@ app.use(cors({
 
 // Session configuration
 app.use(session({
+    store: new pgSession({
+        conObject: {
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.DB_SSL_MODE === 'true' ? { rejectUnauthorized: false } : undefined
+        },
+        tableName: 'session'
+    }),
     secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
@@ -66,21 +74,29 @@ app.get('/', (req, res) => {
     res.json({ message: 'Real Estate CRM API is running' });
 });
 
-const PORT = process.env.PORT || 5001;
-
 // Database connection and model sync
 const startServer = async () => {
     try {
         await sequelize.authenticate();
-        console.log('✅ Database connected successfully');
+        console.log('Database connection established successfully.');
 
-        // ✅ Sync models with the database
-        // Using { force: false } to avoid altering existing tables
-        // This prevents the 'Too many keys' error
-        await sequelize.sync({ force: false });
+        // Sync all models
+        await sequelize.sync();
+        console.log('Database models synchronized successfully.');
 
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on port ${PORT}`);
+        // Create session table if it doesn't exist
+        await sequelize.query(`
+            CREATE TABLE IF NOT EXISTS "session" (
+                "sid" varchar NOT NULL COLLATE "default",
+                "sess" json NOT NULL,
+                "expire" timestamp(6) NOT NULL,
+                CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+            )
+        `);
+
+        const PORT = process.env.PORT || 10000;
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`Server is running on port ${PORT}`);
         });
     } catch (error) {
         console.error('❌ Unable to connect to the database:', error);
