@@ -11,7 +11,7 @@ const sequelize = new Sequelize(
     }
 );
 
-const Broker = require('./broker')(sequelize);
+const Broker = require('./Broker')(sequelize);
 const Client = require('./clients_model')(sequelize);
 const Property = require('./Property')(sequelize);
 const Schedule = require('./schedule')(sequelize);
