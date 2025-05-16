@@ -659,22 +659,32 @@ form {
 
 .form-group input,
 .form-group select,
-.form-group textarea {
+.form-group .data-table {
     width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    background-color: white;
+}
+
+/* Add data-label attributes for responsive tables */
+.data-table td[data-label="Property"],
+.data-table td[data-label="Client"],
+.data-table td[data-label="Date"],
+.data-table td[data-label="Time"],
+.data-table td[data-label="Status"],
+.data-table td[data-label="Actions"] {
+    position: relative;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
     padding: 10px;
     font-size: 14px;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background-color: white;
     transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(0, 127, 255, 0.1);
-    outline: none;
 }
 
 .form-group textarea {
@@ -765,68 +775,417 @@ input:checked+.slider:before {
     transform: translateX(20px);
 }
 
-/* Responsive */
+/* Responsive Styles */
+
+/* Large Desktop and Desktop */
+@media (max-width: 1200px) {
+    .data-table th,
+    .data-table td {
+        padding: 12px 15px;
+    }
+    
+    .detail-panel {
+        width: 90%;
+        max-width: 800px;
+    }
+}
+
+/* Tablet Landscape */
 @media (max-width: 1024px) {
     .dashboard-overview {
         grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
     }
 
     .detail-columns {
         grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .calendar-grid {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+    
+    .visit-pill {
+        padding: 3px 6px;
+        margin-bottom: 4px;
+        font-size: 11px;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .action-buttons-container button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .form-grid {
+        gap: 15px;
     }
 }
 
+/* Tablet Portrait */
 @media (max-width: 768px) {
     .visit-scheduling {
-        padding: 20px;
+        padding: 15px;
     }
 
     .page-header {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
+        margin-bottom: 20px;
     }
 
     .action-buttons {
         width: 100%;
+        display: flex;
+        gap: 10px;
     }
 
     .btn {
         flex: 1;
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+    
+    .dashboard-metrics {
+        padding: 15px;
+    }
+    
+    .metric-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .metric-content h3 {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+    
+    .metric-value {
+        font-size: 22px;
     }
 
     .filter-controls {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
+        margin-bottom: 15px;
     }
 
     .search-box {
         width: 100%;
     }
+    
+    .search-box input {
+        height: 40px;
+    }
 
     .status-filters {
         width: 100%;
-        justify-content: space-between;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .filter-btn {
+        flex: 1 0 auto;
+        min-width: calc(25% - 8px);
+        font-size: 12px;
+        padding: 8px 10px;
+        text-align: center;
     }
 
     .form-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .view-toggle {
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .toggle-btn {
+        flex: 1;
+        font-size: 13px;
+    }
+    
+    .toggle-btn span {
+        margin-left: 5px;
+    }
+    
+    .data-table {
+        min-width: 600px;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        margin-bottom: 20px;
+    }
+    
+    /* Adjust the detail panel for tablet view */
+    .detail-panel {
+        width: 95%;
+        max-width: 95%;
+        height: 90%;
+        max-height: 90%;
+    }
+    
+    .detail-content {
+        padding: 15px;
+    }
+    
+    .detail-section {
+        margin-bottom: 15px;
+    }
+    
+    .detail-actions {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .detail-actions button {
+        flex: 1 0 calc(50% - 10px);
+    }
+    
+    /* Calendar adjustments */
+    .calendar-day {
+        min-height: 100px;
     }
 }
 
+/* Mobile */
 @media (max-width: 576px) {
     .dashboard-overview {
         grid-template-columns: 1fr;
+        gap: 10px;
     }
-
+    
+    .metric-card {
+        padding: 12px;
+    }
+    
+    .title-area h1 {
+        font-size: 24px;
+    }
+    
+    .title-area p {
+        font-size: 14px;
+    }
+    
+    .view-toggle {
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+    }
+    
+    .toggle-btn {
+        width: 100%;
+        padding: 10px;
+    }
+    
+    /* Transform table to card-based layout on mobile */
+    .data-table {
+        display: block;
+        min-width: auto;
+        border: none;
+        background: none;
+        box-shadow: none;
+    }
+    
+    .data-table thead {
+        display: none;
+    }
+    
+    .data-table tbody {
+        display: block;
+        width: 100%;
+    }
+    
+    .data-table tr {
+        display: block;
+        margin-bottom: 15px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 0;
+    }
+    
+    .data-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 15px;
+        text-align: right;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .data-table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        float: left;
+        text-align: left;
+        color: #444;
+    }
+    
+    .data-table td:last-child {
+        border-bottom: none;
+    }
+    
+    /* Adjust action buttons in table */
+    .action-buttons-container {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .action-buttons-container button {
+        width: auto;
+        margin-left: auto;
+        font-size: 12px;
+        min-width: 90px;
+    }
+    
+    /* Detail panel adjustments */
+    .detail-panel {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+    
+    .detail-header {
+        padding: 12px 15px;
+    }
+    
+    .detail-content {
+        padding: 12px;
+        gap: 10px;
+    }
+    
+    .detail-section h4 {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+    
+    .detail-actions {
+        flex-direction: column;
+    }
+    
+    .detail-actions button {
+        width: 100%;
+    }
+    
+    /* Form adjustments */
+    .form-overlay {
+        padding: 0;
+    }
+    
+    .form-container {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        border-radius: 0;
+    }
+    
+    .form-header {
+        padding: 15px;
+    }
+    
+    .form-body {
+        padding: 15px;
+    }
+    
+    .form-footer {
+        padding: 15px;
+    }
+    
+    /* Calendar view adjustments */
+    .calendar-grid {
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+    }
+    
     .calendar-day {
         min-height: 70px;
         padding: 5px;
     }
-
+    
     .visit-pill {
         font-size: 9px;
         padding: 2px 4px;
+        margin-bottom: 2px;
+    }
+    
+    .day-visits {
+        max-height: 40px;
+        overflow-y: auto;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 375px) {
+    .metric-card {
+        padding: 10px;
+    }
+    
+    .metric-icon {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+    
+    .metric-value {
+        font-size: 20px;
+    }
+    
+    .filter-btn {
+        padding: 6px 8px;
+        font-size: 11px;
+        min-width: 0;
+        flex: 1 0 auto;
+    }
+    
+    .status-badge {
+        padding: 3px 6px;
+        font-size: 11px;
+    }
+    
+    .data-table td:before {
+        width: 40%;
+        font-size: 12px;
+    }
+    
+    .data-table td {
+        padding: 8px 12px;
+        min-height: 40px;
+    }
+    
+    .action-buttons-container button {
+        font-size: 11px;
+        padding: 5px 8px;
+        min-width: 80px;
+    }
+    
+    .calendar-day {
+        min-height: 60px;
+        padding: 3px;
+    }
+    
+    .day-number {
+        font-size: 12px;
+    }
+    
+    .day-visits {
+        max-height: 35px;
     }
 }
