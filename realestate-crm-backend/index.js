@@ -30,7 +30,7 @@ app.use(cors({
 
 // Session configuration
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -63,7 +63,7 @@ app.get('/', (req, res) => {
     res.json({ message: 'Real Estate CRM API is running' });
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT;
 
 // Database connection and model sync
 const startServer = async () => {
