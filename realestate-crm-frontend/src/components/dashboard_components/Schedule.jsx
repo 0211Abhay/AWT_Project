@@ -41,10 +41,10 @@ const Schedule = () => {
                 ...prev,
                 property_id: scheduledPropertyId
             }));
-            
+
             // Open the new visit modal
             setShowNewVisitForm(true);
-            
+
             // Clear the property ID from localStorage to prevent it from opening on refresh
             localStorage.removeItem('schedulePropertyId');
         }
@@ -55,23 +55,23 @@ const Schedule = () => {
         const fetchData = async () => {
             setLoading(true);
             setError(null);
-            
+
             try {
                 // Get broker ID from localStorage
                 const currentBrokerId = localStorage.getItem('brokerId');
                 console.log('Current broker ID from localStorage:', currentBrokerId);
-                
+
                 if (!currentBrokerId) {
                     throw new Error('Broker ID not found. Please log in again.');
                 }
-                
+
                 // Fetch schedules for the current broker
                 const schedulesResponse = await axios.get(`http://localhost:5001/api/schedule/broker/${currentBrokerId}`);
 
                 // Fetch properties for current broker
                 const propertiesResponse = await axios.get(`http://localhost:5001/api/property/getPropertiesByBroker/${currentBrokerId}`);
                 console.log('Fetched properties for broker (raw response):', propertiesResponse.data);
-                
+
                 // Log the full structure to debug
                 console.log('Properties response structure:', {
                     hasProperties: !!propertiesResponse.data?.properties,
@@ -144,7 +144,7 @@ const Schedule = () => {
 
                 // Handle different possible property response structures
                 let rawProperties = [];
-                
+
                 // Check if response is in the format {properties: [...]} or direct array [...]
                 if (propertiesResponse.data && propertiesResponse.data.properties) {
                     // Response has {properties: [...]} format
@@ -155,9 +155,9 @@ const Schedule = () => {
                 } else {
                     console.error('Unexpected property response format:', propertiesResponse.data);
                 }
-                
+
                 console.log('Raw properties array:', rawProperties);
-                
+
                 // No need to filter by broker_id since the endpoint already filters by broker
                 const formattedProperties = rawProperties.map(property => ({
                     property_id: property.property_id,
@@ -1023,7 +1023,7 @@ const Schedule = () => {
                                 ></textarea>
                             </div>
 
-                            <div className="reminder-settings">
+                            {/* <div className="reminder-settings">
                                 <h4>Notification Settings</h4>
                                 <div className="reminder-toggle">
                                     <span>Send email reminder to client (24h before)</span>
@@ -1039,7 +1039,7 @@ const Schedule = () => {
                                         <span className="slider"></span>
                                     </label>
                                 </div>
-                            </div>
+                            </div> */}
 
                             <div className="form-actions">
                                 <button type="button" className="btn btn-secondary" onClick={() => setShowNewVisitForm(false)}>
