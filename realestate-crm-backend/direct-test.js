@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Test route
 app.get('/', (req, res) => {
-    res.json({ message: 'Real Estate CRM API is running' });
+  res.json({ message: 'Real Estate CRM API is running' });
 });
 
 const PORT = process.env.PORT || 5001;
@@ -19,7 +19,7 @@ async function startServer() {
     console.log('Testing direct MySQL connection...');
     console.log('Host:', process.env.DB_HOST);
     console.log('Port:', process.env.DB_PORT);
-    
+
     const connection = await mysql.createConnection({
       host: process.env.DB_HOST,
       port: process.env.DB_PORT,
@@ -31,13 +31,13 @@ async function startServer() {
       } : false,
       connectTimeout: 10000,
     });
-    
+
     console.log('✅ Direct MySQL connection successful!');
-    
+
     const [rows] = await connection.execute('SHOW TABLES');
     console.log('Tables in database:', rows);
     await connection.end();
-    
+
     // Now try Sequelize
     console.log('\nTesting Sequelize connection...');
     const sequelize = new Sequelize(
@@ -63,15 +63,15 @@ async function startServer() {
         }
       }
     );
-    
+
     await sequelize.authenticate();
     console.log('✅ Sequelize connection authenticated successfully!');
-    
+
     // Start Express server
     app.listen(PORT, () => {
       console.log(`✅ Server running on port ${PORT}`);
     });
-    
+
   } catch (error) {
     console.error('❌ Error during startup:', error);
   }
