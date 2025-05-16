@@ -1,5 +1,3 @@
-
-
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
@@ -12,9 +10,7 @@ const scheduleRoutes = require('./routes/schedule_routes');
 const rentalRoutes = require('./routes/rental_routes');
 const rentPaymentRoutes = require('./routes/rent_payment_routes');
 
-
 const passport = require('passport');
-
 
 const googleAuthRoutes = require('./routes/google_auth');
 
@@ -58,8 +54,9 @@ app.use('/api/schedule', scheduleRoutes);
 app.use('/api/rental', rentalRoutes);
 app.use('/api/payment', rentPaymentRoutes);
 
+// Mount Google auth routes directly instead of nesting them
+// This prevents path conflicts with the callback URL
 app.use('/api/auth/google', googleAuthRoutes);
-
 
 // Test route
 app.get('/', (req, res) => {

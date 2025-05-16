@@ -168,6 +168,10 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         logout,
+        loginWithGoogle: () => {
+            window.location.href = 'http://localhost:5001/api/auth/google';
+            return { success: true };
+        },
         checkSession
     };
 
