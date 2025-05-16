@@ -8,53 +8,50 @@ console.log(`Database: ${process.env.DB_NAME}`);
 console.log(`Dialect: ${process.env.DB_DIALECT || 'postgres'}`);
 console.log(`SSL Mode: ${process.env.DB_SSL_MODE}`);
 
-// Use DATABASE_URL if available, otherwise use individual parameters
 let sequelize;
 
+const dialect = process.env.DB_DIALECT || 'postgres';
+
 if (process.env.DATABASE_URL) {
-    // Using connection string
     console.log('Using database connection string');
     sequelize = new Sequelize(process.env.DATABASE_URL, {
-        dialect: process.env.DB_DIALECT || 'postgres',
+        dialect,
         dialectOptions: {
-            ssl: process.env.DB_SSL_MODE === 'REQUIRED' ? {
-                require: true,
-                rejectUnauthorized: false
-            } : false,
-            connectTimeout: 60000 // 1 minute
+            ssl: 
+                ? { require: true, rejectUnauthorized: false }
+                    : undefined,
+            connectTimeout: 60000,
         },
         logging: console.log,
         pool: {
             max: 2,
             min: 0,
             acquire: 300000,
-            idle: 10000
-        }
+            idle: 10000,
+        },
     });
 } else {
-    // Using individual parameters
     console.log('Using individual connection parameters');
     sequelize = new Sequelize({
-        dialect: process.env.DB_DIALECT || 'postgres',
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
+        dialect,
+        host: 'localhost',
+        port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 5432,
         database: process.env.DB_NAME || 'defaultdb_fk4z',
         username: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
         logging: console.log,
         dialectOptions: {
-            ssl: process.env.DB_SSL_MODE === 'REQUIRED' ? {
-                require: true,
-                rejectUnauthorized: false
-            } : false,
-            connectTimeout: 60000 // 1 minute
+            ssl: process.env.DB_SSL_MODE === 'REQUIRED'
+                ? { require: true, rejectUnauthorized: false }
+                : false,
+            connectTimeout: 60000,
         },
         pool: {
             max: 2,
             min: 0,
             acquire: 300000,
-            idle: 10000
-        }
+            idle: 10000,
+        },
     });
 }
 

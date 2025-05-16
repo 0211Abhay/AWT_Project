@@ -1,58 +1,38 @@
 require('dotenv').config();
 
-const isProduction = process.env.NODE_ENV === 'production' || true;
+// Load environment variables into constants
+const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// Log the configuration to help troubleshoot
+// Log the configuration
 console.log('Database Configuration:');
-console.log('Host:', process.env.DB_HOST);
-console.log('Port:', process.env.DB_PORT);
-console.log('Database:', process.env.DB_NAME);
-console.log('Dialect:', process.env.DB_DIALECT || 'postgres');
-console.log('SSL Mode:', process.env.DB_SSL_MODE);
+console.log('Environment:', NODE_ENV);
+console.log(`Host: ${process.env.DB_HOST}`);
+console.log(`Port: ${process.env.DB_PORT}`);
+console.log(`Database: ${process.env.DB_NAME}`);
+console.log(`Username: ${process.env.DB_USER}`);
 
-module.exports = {
-    database: process.env.DB_NAME || 'defaultdb_fk4z',
-    username: process.env.DB_USER || 'avnadmin',
-    password: process.env.DB_PASSWORD || '',
-    host: process.env.DB_HOST || 'dpg-d0je7iu3jp1c739qus70-a',
-    port: parseInt(process.env.DB_PORT, 10) || 5432,
-    dialect: process.env.DB_DIALECT || 'postgres',
-    logging: console.log, // Enable logging for troubleshooting
+// Sequelize configuration object - using the working configuration from direct-pg-test.js
+const sequelizeConfig = {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    database: process.env.DB_NAME,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    dialect: 'postgres',
+    logging: console.log,
     dialectOptions: {
-        ssl: process.env.DB_SSL_MODE === 'REQUIRED' ? {
-            require: true,
+        ssl: {
             rejectUnauthorized: false
-        } : false,
-        connectTimeout: 120000, // Increase timeout to 2 minutes for cloud connections
-        // These options help with connection troubles
+        },
+        connectTimeout: 10000,
         dateStrings: true,
         supportBigNumbers: true
     },
     pool: {
-        max: 3, // Reduce pool size for cloud environments
+        max: 5,
         min: 0,
-        acquire: 120000, // Increase acquisition timeout
-        idle: 30000, // Increase idle timeout
-        evict: 60000 // Run cleanup every minute
-    },
-    retry: {
-        max: 5, // Retry connection up to 5 times
-        timeout: 60000 // Overall timeout for connection attempts
+        idle: 10000
     }
 };
 
-// sequelize.authenticate()
-//     .then(() => console.log('MySQL Connected via Sequelize'))
-//     .catch(err => console.error('MySQL Connection Failed:', err));
-
-// module.exports = sequelize;
-
-// "bcryptjs": "^2.4.3",
-// "cors": "^2.8.5",
-// "dotenv": "^16.4.7",
-// "express": "^4.21.2",
-// "jsonwebtoken": "^9.0.2",
-// "mongoose": "^8.10.0",
-// "multer": "^1.4.5-lts.1",
-// "mysql2": "^3.12.0",
-// "sequelize": "^6.37.5",
+module.exports = sequelizeConfig;
