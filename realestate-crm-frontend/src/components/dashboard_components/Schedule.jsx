@@ -780,11 +780,11 @@ const Schedule = () => {
                                 <tbody>
                                     {filteredVisits.map(visit => (
                                         <tr key={visit.id} onClick={() => handleVisitSelect(visit)}>
-                                            <td>{visit.property}</td>
-                                            <td>{visit.client_name}</td>
-                                            <td>{formatDate(visit.date)}</td>
-                                            <td>{visit.time}</td>
-                                            <td>
+                                            <td data-label="Property">{visit.property}</td>
+                                            <td data-label="Client">{visit.client_name}</td>
+                                            <td data-label="Date">{formatDate(visit.date)}</td>
+                                            <td data-label="Time">{visit.time}</td>
+                                            <td data-label="Status">
                                                 <span className={`status-badge ${getStatusClass(visit.status)}`}>
                                                     {visit.status === 'scheduled' && <CheckSquare size={14} />}
                                                     {visit.status === 'completed' && <CheckCircle size={14} />}
@@ -792,7 +792,7 @@ const Schedule = () => {
                                                     {visit.status.charAt(0).toUpperCase() + visit.status.slice(1)}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td data-label="Actions">
                                                 <div className="action-buttons-container">
                                                     {(visit.status === 'scheduled' || visit.status === 'pending') && (
                                                         <>
