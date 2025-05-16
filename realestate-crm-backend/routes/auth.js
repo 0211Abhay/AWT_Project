@@ -79,15 +79,21 @@ router.post('/login', async (req, res) => {
 // Check authentication status
 router.get('/check', async (req, res) => {
     try {
-        if (!req.session.brokerId) {
+        // Check for either Passport's req.user or your custom session.brokerId
+        const brokerId = req.user?.broker_id || req.session.brokerId;
+        
+        if (!brokerId) {
+            console.log('Auth check: No brokerId found in session or user object');
             return res.json({ authenticated: false });
         }
 
-        const broker = await Broker.findByPk(req.session.brokerId);
+        const broker = await Broker.findByPk(brokerId);
         if (!broker) {
+            console.log(`Auth check: No broker found with ID ${brokerId}`);
             return res.json({ authenticated: false });
         }
 
+        console.log(`Auth check: Successfully authenticated broker ${broker.email}`);
         const { password_hash, ...brokerData } = broker.toJSON();
         res.json({
             authenticated: true,
@@ -170,21 +176,6 @@ router.put('/profile', isAuthenticated, async (req, res) => {
         console.error('Profile update error:', error);
         res.status(500).json({ success: false, message: 'Server error', error: error.message });
     }
-});
-
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-router.get('/google/callback', passport.authenticate('google', {
-    failureRedirect: 'http://localhost:5173/login',
-    session: true
-}), (req, res) => {
-    res.redirect('http://localhost:5173/dashboard'); // Redirect to frontend
-});
-
-router.get('/logout', (req, res) => {
-    req.logout(() => {
-        res.redirect('http://localhost:5173/login');
-    });
 });
 
 module.exports = router;
