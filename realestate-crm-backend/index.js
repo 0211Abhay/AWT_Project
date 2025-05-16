@@ -75,25 +75,80 @@ app.use(session({
     }
 }));
 
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
+
 // Initialize Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Routes
-app.use('/api/auth', authRoutes);
+// API documentation route
+app.get('/', (req, res) => {
+    res.json({
+        message: 'Real Estate CRM API',
+        version: '1.0',
+        endpoints: {
+            auth: '/api/auth/*',
+            client: '/api/client/*',
+            property: '/api/property/*',
+            schedule: '/api/schedule/*',
+            rental: '/api/rental/*',
+            payment: '/api/payment/*',
+            google: '/api/auth/google/*'
+        }
+    });
+});
 
+// API health check
+app.get('/api', (req, res) => {
+    res.json({
+        status: 'healthy',
+        message: 'Real Estate CRM API is running',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Routes with /api prefix
+app.use('/api/auth/google', googleAuthRoutes); // Google auth should be before general auth
+app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/property', propertyRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/api/rental', rentalRoutes);
 app.use('/api/payment', rentPaymentRoutes);
 
-app.use('/api/auth/google', googleAuthRoutes);
+// Error handling for 404
+app.use((req, res, next) => {
+    console.log(`404 - Not Found: ${req.method} ${req.url}`);
+    res.status(404).json({
+        error: 'Not Found',
+        message: `Cannot ${req.method} ${req.url}`,
+        requestedUrl: req.url,
+        method: req.method,
+        timestamp: new Date().toISOString(),
+        availableRoutes: [
+            '/api/auth/google/*',
+            '/api/auth/*',
+            '/api/client/*',
+            '/api/property/*',
+            '/api/schedule/*',
+            '/api/rental/*',
+            '/api/payment/*'
+        ],
+        suggestion: 'Make sure you are using the correct HTTP method and including the /api prefix'
+    });
+});
 
-
-// Test route
-app.get('/', (req, res) => {
-    res.json({ message: 'Real Estate CRM API is running' });
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(err.status || 500).json({
+        error: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
 });
 
 // Database connection and model sync

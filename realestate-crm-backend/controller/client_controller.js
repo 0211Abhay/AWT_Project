@@ -34,19 +34,50 @@ exports.getAllClients = async (req, res) => {
 // Get a single client by ID
 exports.getClientById = async (req, res) => {
     try {
-        const client = await Client.findByPk(req.params.id);
-        if (!client) {
-            return res.status(404).json({ error: 'Client not found' });
+        console.log('Getting client details for ID:', req.params.id);
+
+        if (!req.params.id) {
+            return res.status(400).json({
+                error: 'Missing client ID',
+                requestedId: req.params.id,
+                path: req.path
+            });
         }
-        res.status(200).json({ message: "Client fetched successfully", client });
+
+        const client = await Client.findByPk(req.params.id);
+        console.log('Found client:', client);
+
+        if (!client) {
+            return res.status(404).json({
+                error: 'Client not found',
+                requestedId: req.params.id,
+                path: req.path
+            });
+        }
+
+        res.status(200).json(client);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error in getClientById:', error);
+        res.status(500).json({
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 
 // Update a client
 exports.updateClient = async (req, res) => {
     try {
+        console.log('Updating client details for ID:', req.params.id);
+
+        if (!req.params.id) {
+            return res.status(400).json({
+                error: 'Missing client ID',
+                requestedId: req.params.id,
+                path: req.path
+            });
+        }
+
         const client = await Client.findByPk(req.params.id);
         if (!client) {
             return res.status(404).json({ error: 'Client not found' });
@@ -74,13 +105,37 @@ exports.deleteClient = async (req, res) => {
 // Get client name by ID
 exports.getClientNameById = async (req, res) => {
     try {
-        const client = await Client.findByPk(req.params.id);
-        if (!client) {
-            return res.status(404).json({ error: 'Client not found' });
+        console.log('Getting client name for ID:', req.params.id);
+
+        if (!req.params.id) {
+            return res.status(400).json({
+                error: 'Missing client ID',
+                requestedId: req.params.id,
+                path: req.path
+            });
         }
-        res.status(200).json({ clientName: client.name });
+
+        const client = await Client.findByPk(req.params.id);
+        console.log('Found client:', client);
+
+        if (!client) {
+            return res.status(404).json({
+                error: 'Client not found',
+                requestedId: req.params.id,
+                path: req.path
+            });
+        }
+
+        res.status(200).json({
+            clientName: client.name,
+            clientId: client.id
+        });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error in getClientNameById:', error);
+        res.status(500).json({
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 
