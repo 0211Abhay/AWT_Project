@@ -84,7 +84,7 @@ const Navbar = ({ activeSection, onNavigate }) => {
     return (
         <nav className={`navbar ${!isVisible ? 'navbar-hidden' : ''} ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
             <div className="navbar-container">
-                <Link to="/" className="navbar-logo">
+                <Link to={broker ? "/dashboard" : "/"} className="navbar-logo">
                     Estatemate
                 </Link>
                 
