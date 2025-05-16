@@ -1,13 +1,26 @@
 const { Sequelize } = require('sequelize');
 const config = require('../config/db');
+require('dotenv');
+const fs = require('fs');
+const path = require('path');
 
 const sequelize = new Sequelize(
-    config.database,
-    config.username,
-    config.password,
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASSWORD,
     {
-        host: config.host,
-        dialect: config.dialect
+        host: process.env.DB_HOST,
+        port: +process.env.DB_PORT,
+        dialect: 'mysql',                // ← this is mandatory
+        logging: console.log,
+        dialectOptions: {
+            ssl: {
+                ca: fs.readFileSync(path.resolve(__dirname, '../sert/ca2.pem')),
+                rejectUnauthorized: false
+            },
+            connectTimeout: 120000
+        },
+        pool: { max: 3, min: 0, idle: 30000 }
     }
 );
 
