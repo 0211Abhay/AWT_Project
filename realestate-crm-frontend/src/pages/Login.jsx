@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
@@ -91,14 +90,12 @@ const Login = () => {
                 </form>
 
                 <div className='google-login-div'>
-
-                    <GoogleButton className='google-button' style={{ width: '350px', borderRadius: '0px' }}
-                        onClick={() => { console.log('Google button clicked') }}
+                    <GoogleButton 
+                        className='google-button' 
+                        style={{ width: '350px', borderRadius: '0px' }}
+                        onClick={handleGoogleLogin}
                     />
                 </div>
-
-
-                <GoogleLoginButton/>
 
                 <div className="auth-footer">
                     <p>

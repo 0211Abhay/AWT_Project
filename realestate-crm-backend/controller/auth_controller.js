@@ -74,3 +74,70 @@ exports.login = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
 };
+
+// Get Broker Profile
+exports.getBrokerProfile = async (req, res) => {
+    try {
+        const brokerId = req.user.broker_id;
+
+        // Find broker by ID
+        const broker = await Broker.findByPk(brokerId);
+        if (!broker) {
+            return res.status(404).json({ success: false, message: "Broker not found" });
+        }
+
+        res.json({
+            success: true,
+            broker: {
+                broker_id: broker.broker_id,
+                name: broker.name,
+                email: broker.email,
+                phone: broker.phone
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+};
+
+// Update Broker Profile
+exports.updateProfile = async (req, res) => {
+    try {
+        const brokerId = req.user.broker_id;
+        const { name, email, phone } = req.body;
+
+        // Find broker by ID
+        const broker = await Broker.findByPk(brokerId);
+        if (!broker) {
+            return res.status(404).json({ success: false, message: "Broker not found" });
+        }
+
+        // Check if email is being changed and if it's already in use
+        if (email !== broker.email) {
+            const existingBroker = await Broker.findOne({ where: { email } });
+            if (existingBroker) {
+                return res.status(400).json({ success: false, message: "Email already in use" });
+            }
+        }
+
+        // Update broker
+        broker.name = name || broker.name;
+        broker.email = email || broker.email;
+        broker.phone = phone || broker.phone;
+
+        await broker.save();
+
+        res.json({
+            success: true,
+            message: "Profile updated successfully",
+            broker: {
+                broker_id: broker.broker_id,
+                name: broker.name,
+                email: broker.email,
+                phone: broker.phone
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+};

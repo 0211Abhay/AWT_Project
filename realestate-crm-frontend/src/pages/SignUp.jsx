@@ -5,6 +5,7 @@ import axios from 'axios';
 import API_CONFIG from '../config/api';
 import "../style/Login.css";
 import GoogleButton from 'react-google-button'
+import { useAuth } from "../context/AuthContext";
 
 const SignUp = () => {
     const [name, setName] = useState("");
@@ -14,6 +15,7 @@ const SignUp = () => {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const { loginWithGoogle } = useAuth();  
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -113,10 +115,15 @@ const SignUp = () => {
 
                 </form>
                 <div className='google-login-div'>
-
-                    <GoogleButton className='google-button' style={{ width: '300px', borderRadius: '0px' }}
-                        onClick={() => { console.log('Google button clicked') }}
+                    <GoogleButton 
+                      className='google-button' 
+                      style={{ width: '350px', borderRadius: '0px' }}
+                      onClick={() => {
+                        setError(null);
+                        loginWithGoogle();
+                      }}
                     />
+                    
                 </div>
                 <div className="auth-footer">
                     <p>

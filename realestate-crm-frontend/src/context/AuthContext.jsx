@@ -164,12 +164,73 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Request password reset
+    const forgotPassword = async (email) => {
+        try {
+            const response = await api.post('/auth/forgot-password', { email });
+            return { 
+                success: true, 
+                message: response.data.message 
+            };
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || 'An error occurred during password reset request'
+            };
+        }
+    };
+
+    // Verify reset token
+    const verifyResetToken = async (token) => {
+        try {
+            const response = await api.get(`/auth/verify-reset-token/${token}`);
+            return { 
+                success: response.data.success, 
+                message: response.data.message 
+            };
+        } catch (error) {
+            console.error('Token verification error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || 'An error occurred during token verification'
+            };
+        }
+    };
+
+    // Reset password with token
+    const resetPassword = async (token, newPassword) => {
+        try {
+            const response = await api.post('/auth/reset-password', { 
+                token, 
+                newPassword 
+            });
+            return { 
+                success: true, 
+                message: response.data.message 
+            };
+        } catch (error) {
+            console.error('Password reset error:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || 'An error occurred during password reset'
+            };
+        }
+    };
+
     const value = {
         broker,
         loading,
         login,
         logout,
-        checkSession
+        loginWithGoogle: () => {
+            window.location.href = 'http://localhost:5001/api/auth/google';
+            return { success: true };
+        },
+        checkSession,
+        forgotPassword,
+        verifyResetToken,
+        resetPassword
     };
 
     return (
