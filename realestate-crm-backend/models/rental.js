@@ -2,6 +2,7 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const Rental = sequelize.define("Rental", {
+
         rental_id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -59,7 +60,7 @@ module.exports = (sequelize) => {
         tableName: 'rental_management',
         timestamps: true,
         createdAt: 'created_at',
-        updatedAt: false,
+        updatedAt: false
     });
 
     return Rental;
