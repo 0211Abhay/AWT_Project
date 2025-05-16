@@ -1,5 +1,5 @@
 require('dotenv').config();
-
+const fs = require('fs');
 module.exports = {
     database: process.env.DB_NAME,
     username: process.env.DB_USER,
@@ -16,8 +16,8 @@ module.exports = {
     },
     dialectOptions: {
         ssl: {
-            require: true,
-            rejectUnauthorized: false // Accept Aiven's self-signed cert
+             ca: fs.readFileSync(__dirname + '/ca.pem').toString(),
+            rejectUnauthorized: true // Accept Aiven's self-signed cert
         }
     }
 };
