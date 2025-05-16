@@ -6,6 +6,7 @@ import About from './pages/Aboutus';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Header from './components/header/Header';
 import { AuthProvider } from './context/AuthContext';
@@ -42,6 +43,7 @@ const App = () => {
             </ProtectedRoute>
           } />
           <Route path="/forgot-password" element={<HeaderOnlyLayout><ForgotPassword /></HeaderOnlyLayout>} />
+          <Route path="/reset-password/:token" element={<HeaderOnlyLayout><ResetPassword /></HeaderOnlyLayout>} />
         </Routes>
       </Router>
     </AuthProvider>
