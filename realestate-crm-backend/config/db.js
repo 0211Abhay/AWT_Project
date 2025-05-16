@@ -1,10 +1,11 @@
 require('dotenv').config();
 
 module.exports = {
-    database: process.env.DB_NAME || 'aj_awt_project',
-    username: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME,
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT), // Add port if needed
     dialect: 'mysql',
     logging: false,
     pool: {
@@ -12,6 +13,12 @@ module.exports = {
         min: 0,
         acquire: 30000,
         idle: 10000
+    },
+    dialectOptions: {
+        ssl: {
+            require: true,
+            rejectUnauthorized: false // Accept Aiven's self-signed cert
+        }
     }
 };
 
