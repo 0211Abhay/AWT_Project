@@ -60,7 +60,7 @@ exports.login = async (req, res) => {
         // Generate JWT
         const token = jwt.sign(
             { broker_id: broker.broker_id, name: broker.name },
-            process.env.JWT_SECRET,
+            process.env.SESSION_SECRET,
             { expiresIn: "7d" }
         );
 
