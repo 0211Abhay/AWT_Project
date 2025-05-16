@@ -1,48 +1,44 @@
 const { Sequelize } = require('sequelize');
 
-// Determine the environment
-const isProduction = process.env.NODE_ENV === 'production' || true; // Default to production behavior
+// Always log connection details to help with troubleshooting
+console.log('Initializing Sequelize connection:');
+console.log(`Host: ${process.env.DB_HOST}`);
+console.log(`Port: ${process.env.DB_PORT}`);
+console.log(`Database: ${process.env.DB_NAME}`);
+console.log(`SSL Mode: ${process.env.DB_SSL_MODE}`);
 
-// For local development
-let sequelize;
+// Create connection URL format for better reliability
+const dbUrl = `mysql://${process.env.DB_USER}:${encodeURIComponent(process.env.DB_PASSWORD)}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+console.log('Connection string (password hidden):', dbUrl.replace(/:([^:@]+)@/, ':****@'));
 
-if (isProduction) {
-    // Create MySQL connection URL format
-    const dbUrl = `mysql://${process.env.DB_USER}:${encodeURIComponent(process.env.DB_PASSWORD)}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
-    console.log('Connecting with URL (password hidden):', dbUrl.replace(/:([^:@]+)@/, ':****@'));
-    
-    sequelize = new Sequelize(dbUrl, {
-        dialect: 'mysql',
-        logging: console.log, // Keep logging on for troubleshooting
-        dialectOptions: {
-            ssl: {
-                rejectUnauthorized: false // Allow self-signed certs
-            },
-            connectTimeout: 60000 // Long timeout for cloud DB
+// Create a more resilient Sequelize instance
+const sequelize = new Sequelize(dbUrl, {
+    dialect: 'mysql',
+    logging: console.log,
+    dialectOptions: {
+        ssl: {
+            rejectUnauthorized: false // Allow self-signed certificates for Aiven
         },
-        pool: {
-            max: 2, // Reduce connection pool size for cloud
-            min: 0,
-            acquire: 60000,
-            idle: 30000
-        },
-        retry: {
-            max: 3 // Add retry capability
-        }
-    });
-} else {
-    // Local development config - fallback
-    sequelize = new Sequelize(
-        process.env.DB_NAME || 'aj_awt_project',
-        process.env.DB_USER || 'root',
-        process.env.DB_PASSWORD || '',
-        {
-            host: 'localhost',
-            port: 3306,
-            dialect: 'mysql',
-            logging: console.log
-        }
-    );
-}
+        connectTimeout: 180000, // 3 minute timeout for initial connection
+        // Additional options to improve connection reliability
+        dateStrings: true,
+        typeCast: true,
+        supportBigNumbers: true
+    },
+    pool: {
+        max: 2, // Smaller pool size for cloud connections
+        min: 0,
+        acquire: 120000, // 2 minute acquisition timeout
+        idle: 30000,    // 30 second idle timeout
+        evict: 60000    // Run eviction every minute
+    },
+    retry: {
+        max: 5,          // Retry connection up to 5 times
+        backoffBase: 1000, // Start with 1 second delay
+        backoffExponent: 1.5 // Increase delay by 1.5x each attempt
+    },
+    benchmark: true, // Log query execution time for performance monitoring
+    isolationLevel: Sequelize.Transaction.ISOLATION_LEVELS.READ_COMMITTED // More reliable isolation level
+});
 
 module.exports = { sequelize };
