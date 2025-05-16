@@ -1,37 +1,31 @@
 require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
 
 const isProduction = process.env.NODE_ENV === 'production' || true;
-
-// Get the path to the certificate file
-const certPath = path.join(__dirname, '..', 'sert', 'ca2.pem');
 
 // Log the configuration to help troubleshoot
 console.log('Database Configuration:');
 console.log('Host:', process.env.DB_HOST);
 console.log('Port:', process.env.DB_PORT);
 console.log('Database:', process.env.DB_NAME);
+console.log('Dialect:', process.env.DB_DIALECT || 'postgres');
 console.log('SSL Mode:', process.env.DB_SSL_MODE);
-console.log('Certificate Path:', certPath);
 
 module.exports = {
-    database: process.env.DB_NAME || 'aj_awt_project',
-    username: process.env.DB_USER || 'root',
+    database: process.env.DB_NAME || 'defaultdb_fk4z',
+    username: process.env.DB_USER || 'avnadmin',
     password: process.env.DB_PASSWORD || '',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT, 10) || 3306,
-    dialect: 'mysql',
+    host: process.env.DB_HOST || 'dpg-d0je7iu3jp1c739qus70-a',
+    port: parseInt(process.env.DB_PORT, 10) || 5432,
+    dialect: process.env.DB_DIALECT || 'postgres',
     logging: console.log, // Enable logging for troubleshooting
     dialectOptions: {
         ssl: process.env.DB_SSL_MODE === 'REQUIRED' ? {
-            ca: fs.readFileSync(certPath),
-            rejectUnauthorized: true
+            require: true,
+            rejectUnauthorized: false
         } : false,
         connectTimeout: 120000, // Increase timeout to 2 minutes for cloud connections
         // These options help with connection troubles
         dateStrings: true,
-        typeCast: true,
         supportBigNumbers: true
     },
     pool: {

@@ -24,7 +24,7 @@ const connection = mysql.createConnection({
     ca: fs.readFileSync(certPath),
     rejectUnauthorized: true
   } : false,
-  connectTimeout: 60000, // 1 minute timeout
+  connectTimeout: 120000, // 1 minute timeout
   debug: true, // Enable debugging
   trace: true,
   multipleStatements: true,
@@ -54,19 +54,19 @@ connection.connect((err) => {
     console.error('Error connecting to the database:', err);
     return;
   }
-  
+
   console.log('Connected to the database successfully!');
-  
+
   // Perform a test query
   connection.query('SHOW TABLES', (err, results) => {
     if (err) {
       console.error('Error executing query:', err);
       return;
     }
-    
+
     console.log('Tables in the database:');
     console.log(results);
-    
+
     // Close connection when done
     connection.end((err) => {
       if (err) {
