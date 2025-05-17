@@ -1,28 +1,8 @@
 const { Sequelize } = require('sequelize');
-const config = require('../config/db');
-require('dotenv');
-const fs = require('fs');
-const path = require('path');
+require('dotenv').config();
 
-const sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
-    {
-        host: process.env.DB_HOST,
-        port: +process.env.DB_PORT,
-        dialect: 'mysql',                // ← this is mandatory
-        logging: console.log,
-        dialectOptions: {
-            ssl: {
-                ca: fs.readFileSync(path.resolve(__dirname, '../sert/ca2.pem')),
-                rejectUnauthorized: false
-            },
-            connectTimeout: 120000
-        },
-        pool: { max: 3, min: 0, idle: 30000 }
-    }
-);
+// Import the sequelize instance from the database config file
+const { sequelize } = require('../config/database');
 
 const Broker = require('./Broker')(sequelize);
 const Client = require('./clients_model')(sequelize);

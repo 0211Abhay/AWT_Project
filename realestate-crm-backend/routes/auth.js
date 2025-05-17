@@ -53,15 +53,20 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: 'Email and password are required' });
+        }
+        
         const broker = await Broker.findOne({ where: { email } });
 
         if (!broker) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
         const isValidPassword = await bcrypt.compare(password, broker.password_hash);
         if (!isValidPassword) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            return res.status(401).json({ success: false, message: 'Invalid email or password' });
         }
 
         // Set session data
@@ -69,13 +74,21 @@ router.post('/login', async (req, res) => {
 
         // Send broker data without sensitive information
         const { password_hash, ...brokerData } = broker.toJSON();
+        
+        // Ensure broker_id is included in the response
+        const responseData = {
+            ...brokerData,
+            broker_id: broker.broker_id || broker.id
+        };
+        
         res.json({
+            success: true,
             message: 'Login successful',
-            broker: brokerData
+            broker: responseData
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ message: 'Server error during login' });
+        res.status(500).json({ success: false, message: 'Server error during login', error: error.message });
     }
 });
 
