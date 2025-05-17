@@ -14,7 +14,7 @@ const routes = [
 
 async function testRoutes() {
     console.log('Testing API Routes...\n');
-    
+
     for (const route of routes) {
         try {
             console.log(`Testing ${route.method} ${route.path}...`);
@@ -23,7 +23,7 @@ async function testRoutes() {
                 url: `${BASE_URL}${route.path}`,
                 validateStatus: false // Don't throw on non-2xx responses
             });
-            
+
             console.log(`Status: ${response.status}`);
             console.log(`Response: ${JSON.stringify(response.data, null, 2)}\n`);
         } catch (error) {
