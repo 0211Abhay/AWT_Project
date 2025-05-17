@@ -121,16 +121,23 @@ router.get('/check', async (req, res) => {
     }
 });
 
-// Logout route
-router.post('/logout', isAuthenticated, (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            console.error('Logout error:', err);
-            return res.status(500).json({ message: 'Error during logout' });
-        }
+// Logout route - no authentication required
+router.post('/logout', (req, res) => {
+    // Check if session exists
+    if (req.session) {
+        req.session.destroy(err => {
+            if (err) {
+                console.error('Logout error:', err);
+                return res.status(500).json({ success: false, message: 'Error during logout' });
+            }
+            res.clearCookie('connect.sid');
+            res.json({ success: true, message: 'Logged out successfully' });
+        });
+    } else {
+        // If no session exists, still return success
         res.clearCookie('connect.sid');
-        res.json({ message: 'Logged out successfully' });
-    });
+        res.json({ success: true, message: 'Logged out successfully' });
+    }
 });
 
 // Get Broker Profile

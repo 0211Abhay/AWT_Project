@@ -148,20 +148,19 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
+            // Try to logout on the server
             await api.post('/auth/logout');
-            setBroker(null);
-
-            // Clear all localStorage items on logout
-            localStorage.clear();
-
-            return { success: true };
         } catch (error) {
             console.error('Logout error:', error);
-            return {
-                success: false,
-                error: error.response?.data?.message || 'An error occurred during logout'
-            };
+            // Continue with client-side logout even if server request fails
+        } finally {
+            // Always clear local state regardless of server response
+            setBroker(null);
+            localStorage.clear();
         }
+        
+        // Always return success since we've cleared the local state
+        return { success: true };
     };
 
     // Request password reset
