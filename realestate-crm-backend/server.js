@@ -20,7 +20,7 @@ sequelize.authenticate()
     .then(() => {
         console.log('Connected to MySQL database');
         // Sync all models with enhanced alter options
-        return sequelize.sync({ 
+        return sequelize.sync({
             alter: true,
             logging: console.log,
             // Force column adjustments for varchar fields
@@ -36,8 +36,8 @@ sequelize.authenticate()
 
 // Middleware
 app.use(cors({
-    origin: function(origin, callback) {
-        const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
+    origin: function (origin, callback) {
+        const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,https://estatemate2.onrender.com').split(',');
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
